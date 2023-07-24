@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="canonical" href="https://borg.games/" />
+
+    <link rel="shortcut icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#0d0d0d">
+    <meta name="msapplication-TileColor" content="#101010">
+    <meta name="theme-color" content="#000000">
+
+    <title>Games on my PCs - Borg Games</title>
+    <style>
+        button.action {
+            font-size: larger;
+            text-transform: uppercase;
+            padding: 0.5vh 1vh;
+        }
+    </style>
+</head>
+
+<body style="text-align: center; background: #1e1e1e; color: #cedada;">
+    <h1>Games on my PCs</h1>
+
+    <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"
+        integrity="sha384-PARf28kmic36Ve+O3DnUerRXFtOQ7ZDqRDGpLcbljly5/N39T2OV3kt3QsWOKeAX"
+        crossorigin="anonymous"></script>
+    <script>
+        async function main() {
+            const msalConfig = {
+                auth: {
+                    clientId: 'c516d4c8-2391-481d-a098-b66382079a38',
+                },
+                cache: {
+                    cacheLocation: 'localStorage'
+                }
+            };
+
+            const loginRequest = {
+                scopes: ['user.read', 'files.readwrite.appfolder']
+            };
+
+            const clientApp = new msal.PublicClientApplication(msalConfig);
+
+            const redirectResult = await clientApp.handleRedirectPromise();
+            console.debug(redirectResult);
+
+            if (!clientApp.getActiveAccount()) {
+                const currentAccounts = clientApp.getAllAccounts();
+                if (currentAccounts.length !== 0) {
+                    if (currentAccounts.length > 1)
+                        console.warn('More than one account detected, logging in with the first account');
+                    clientApp.setActiveAccount(currentAccounts[0]);
+                    console.log('There is an active account');
+                } else {
+                    console.log('No active accounts, logging in');
+                    try {
+                        const loginResponse = await clientApp.loginRedirect(loginRequest);
+                    } catch (err) {
+                        if (err instanceof msal.InteractionRequiredAuthError) {
+                            document.write('Sign in required: session expired');
+                        } else {
+                            throw err;
+                        }
+                    }
+                    const newAccounts = clientApp.getAllAccounts();
+                    console.log('got ' + newAccounts.length + ' accounts');
+                    clientApp.setActiveAccount(newAccounts[0]);
+                }
+            }
+
+            try {
+                var tokenResponse = await clientApp.acquireTokenSilent(loginRequest);
+            } catch (err) {
+                if (err instanceof msal.InteractionRequiredAuthError) {
+                    tokenResponse = await clientApp.acquireTokenRedirect(loginRequest);
+                } else {
+                    throw err;
+                }
+            }
+
+            console.log(tokenResponse.accessToken);
+        }
+
+        window.onbeforeunload = function () {
+            return 'Are you sure you want to leave?';
+        };
+
+        main();
+    </script>
+</body>
+
+</html>
