@@ -33,7 +33,7 @@
         integrity="sha384-PARf28kmic36Ve+O3DnUerRXFtOQ7ZDqRDGpLcbljly5/N39T2OV3kt3QsWOKeAX"
         crossorigin="anonymous"></script>
     <script>
-        async function main() {
+        async function login() {
             const msalConfig = {
                 auth: {
                     clientId: 'c516d4c8-2391-481d-a098-b66382079a38',
@@ -50,7 +50,7 @@
             const clientApp = new msal.PublicClientApplication(msalConfig);
 
             const redirectResult = await clientApp.handleRedirectPromise();
-            console.debug(redirectResult);
+            console.debug('redirectResult', redirectResult);
 
             if (!clientApp.getActiveAccount()) {
                 const currentAccounts = clientApp.getAllAccounts();
@@ -86,7 +86,41 @@
                 }
             }
 
-            console.log(tokenResponse.accessToken);
+            return tokenResponse;
+        }
+
+        async function main() {
+            const tokenResponse = await login();
+
+            const driveUrl = 'https://graph.microsoft.com/v1.0/me/drive/';
+            function makeRequest(url, options) {
+                options.headers = options.headers || {};
+                options.headers['Authorization'] = 'Bearer ' + tokenResponse.accessToken;
+                return fetch(driveUrl + url, options);
+            }
+
+            const ensureAppFolder = await makeRequest('special/approot', {});
+            console.log('ensure: ', ensureAppFolder);
+
+            const exists = await makeRequest('special/approot:/hello-world', {});
+            if (exists.status === 404) {
+                // PUT new one, of type folder (DriveItem)
+                const response = await makeRequest('special/approot/children', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        "name": "hello-world",
+                        folder: { }
+                    })
+                });
+
+                if (response.status !== 201)
+                    throw new Error('Failed to create folder');
+
+                console.log('POST hello-world: ', response);
+            } else {
+                console.log('hello-world: ', exists);
+            }
         }
 
         window.onbeforeunload = function () {
