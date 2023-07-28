@@ -17,6 +17,7 @@
     <meta name="theme-color" content="#000000">
 
     <title>Games on my PCs - Borg Games</title>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         button.action {
             font-size: larger;
@@ -29,103 +30,131 @@
 <body style="text-align: center; background: #1e1e1e; color: #cedada;">
     <h1>Games on my PCs</h1>
 
+    <div class="video-container">
+        <video autoplay></video>
+    </div>
+
+    <div id="PCs">
+    </div>
+
     <script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"
         integrity="sha384-PARf28kmic36Ve+O3DnUerRXFtOQ7ZDqRDGpLcbljly5/N39T2OV3kt3QsWOKeAX"
         crossorigin="anonymous"></script>
-    <script>
-        async function login() {
-            const msalConfig = {
-                auth: {
-                    clientId: 'c516d4c8-2391-481d-a098-b66382079a38',
-                },
-                cache: {
-                    cacheLocation: 'localStorage'
-                }
-            };
+    <script type="module">
+        import * as OneDrive from './js/onedrive.js';
 
-            const loginRequest = {
-                scopes: ['user.read', 'files.readwrite.appfolder']
-            };
+        import { AudioPlayer } from './js/streaming-client/src/audio.js';
+        import { Client } from './js/streaming-client/src/client.js';
+        import { ClientAPI } from './js/client-api.js';
+        import { getNetworkStatistics } from './js/connectivity-check.js';
+        import { OneDriveSignal } from './js/drive-link.js';
 
-            const clientApp = new msal.PublicClientApplication(msalConfig);
+        AudioPlayer.OPUS_WASM = '/js/streaming-client/src/wasm/opus.wasm';
 
-            const redirectResult = await clientApp.handleRedirectPromise();
-            console.debug('redirectResult', redirectResult);
+        const clientApi = new ClientAPI();
+        const pcList = document.getElementById('PCs');
 
-            if (!clientApp.getActiveAccount()) {
-                const currentAccounts = clientApp.getAllAccounts();
-                if (currentAccounts.length !== 0) {
-                    if (currentAccounts.length > 1)
-                        console.warn('More than one account detected, logging in with the first account');
-                    clientApp.setActiveAccount(currentAccounts[0]);
-                    console.log('There is an active account');
-                } else {
-                    console.log('No active accounts, logging in');
-                    try {
-                        const loginResponse = await clientApp.loginRedirect(loginRequest);
-                    } catch (err) {
-                        if (err instanceof msal.InteractionRequiredAuthError) {
-                            document.write('Sign in required: session expired');
-                        } else {
-                            throw err;
-                        }
+        function runClient(signalFactory, element, sessionId, serverOffer) {
+            return new Promise((resolve) => {
+                //set up client object with an event callback: gets connect, status, chat, and shutter events
+                const client = new Client(clientApi, signalFactory, element, (event) => {
+                    console.log('EVENT', event);
+
+                    if (event.type === 'exit') {
+                        document.removeEventListener('keydown', hotkeys, true);
+                        resolve(event.code);
                     }
-                    const newAccounts = clientApp.getAllAccounts();
-                    console.log('got ' + newAccounts.length + ' accounts');
-                    clientApp.setActiveAccount(newAccounts[0]);
-                }
-            }
+                }, async (name, channel) => {
+                    return getNetworkStatistics(channel);
+                });
+                //set up useful hotkeys that call client methods: destroy can also be used to cancel pending connection
+                const hotkeys = (event) => {
+                    event.preventDefault();
 
-            try {
-                var tokenResponse = await clientApp.acquireTokenSilent(loginRequest);
-            } catch (err) {
-                if (err instanceof msal.InteractionRequiredAuthError) {
-                    tokenResponse = await clientApp.acquireTokenRedirect(loginRequest);
-                } else {
-                    throw err;
-                }
-            }
+                    if (event.code === 'Backquote' && event.ctrlKey && event.altKey) {
+                        client.destroy(0);
+                    } else if (event.code === 'KeyW' && event.ctrlKey && event.altKey) {
+                        toggleFullscreen(client.element);
+                    }
+                };
+                document.addEventListener('keydown', hotkeys, true);
 
-            return tokenResponse;
+                client.connect(sessionId, serverOffer, {
+                    encoder_bitrate: 12,
+                    app_ss_endpoint: 'localhost',
+                    app_ss_port: 7173,
+                });
+            });
+        }
+
+        async function launch(pc, gameID) {
+            const sessionId = crypto.randomUUID();
+            const signalFactory = (onFatal) => {
+                return new OneDriveSignal(pc, onFatal);
+            };
+
+            const container = document.querySelector('.video-container');
+            const element = document.querySelector('video');
+
+            pcList.style.display = 'none';
+            container.style.display = 'block';
+
+            const serverOffer = JSON.parse(await OneDriveSignal.postAssignment(pc, gameID, sessionId));
+            const code = await runClient(signalFactory, element, sessionId, serverOffer);
+
+            pcList.style.display = '';
+            container.style.display = '';
+
+            element.src = '';
+            element.load();
+
+            if (code !== 0)
+                alert(`Exit code: ${code}`);
+        }
+
+        async function getGames(pc, li) {
+            const response = await OneDrive.makeRequest(`special/approot:/PCs/${pc}.games.json:/content`);
+            const items = await response.json();
+            for (const item of items) {
+                const gameItem = document.createElement('div');
+                const button = document.createElement('button');
+                button.innerText = item.Title;
+                button.onclick = () => {
+                    launch(pc, item.ID);
+                };
+                gameItem.appendChild(button);
+                li.appendChild(gameItem);
+            }
+            
+        }
+
+        async function getPCs() {
+            const response = await OneDrive.makeRequest('special/approot:/PCs:/children');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            const json = await response.json();
+            const items = json.value;
+            const listUI = document.getElementById('PCs');
+            for (const item of items) {
+                if (!item.hasOwnProperty('folder')) continue;
+                const li = document.createElement('div');
+                const title = document.createElement('h3');
+                title.innerText = item.name;
+                li.appendChild(title);
+
+                await getGames(item.name, li);
+                listUI.appendChild(li);
+            }
         }
 
         async function main() {
-            const tokenResponse = await login();
+            await OneDrive.login();
 
-            const driveUrl = 'https://graph.microsoft.com/v1.0/me/drive/';
-            function makeRequest(url, options) {
-                options.headers = options.headers || {};
-                options.headers['Authorization'] = 'Bearer ' + tokenResponse.accessToken;
-                return fetch(driveUrl + url, options);
-            }
+            await OneDrive.ensureBorgTag();
 
-            const ensureAppFolder = await makeRequest('special/approot', {});
-            console.log('ensure: ', ensureAppFolder);
-
-            const exists = await makeRequest('special/approot:/hello-world', {});
-            if (exists.status === 404) {
-                // PUT new one, of type folder (DriveItem)
-                const response = await makeRequest('special/approot/children', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        "name": "hello-world",
-                        folder: { }
-                    })
-                });
-
-                if (response.status !== 201)
-                    throw new Error('Failed to create folder');
-
-                console.log('POST hello-world: ', response);
-            } else {
-                console.log('hello-world: ', exists);
-            }
+            await getPCs();
         }
-
-        window.onbeforeunload = function () {
-            return 'Are you sure you want to leave?';
-        };
 
         main();
     </script>

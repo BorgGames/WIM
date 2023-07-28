@@ -1,0 +1,3 @@
+[submodule "js/streaming-client"]
+	path = js/streaming-client
+	url = https://github.com/BorgGames/streaming-client.git
