@@ -54,8 +54,8 @@
         const clientApi = new ClientAPI();
         const pcList = document.getElementById('PCs');
 
-        function runClient(signalFactory, element, sessionId, serverOffer) {
-            return new Promise((resolve) => {
+        function runClient(pc, gameID, signalFactory, element, sessionId) {
+            return new Promise(async (resolve) => {
                 //set up client object with an event callback: gets connect, status, chat, and shutter events
                 const client = new Client(clientApi, signalFactory, element, (event) => {
                     console.log('EVENT', event);
@@ -79,11 +79,22 @@
                 };
                 document.addEventListener('keydown', hotkeys, true);
 
-                client.connect(sessionId, serverOffer, {
+                const cancel = { cancel: false };
+
+                const connectionTimeout = setTimeout(() => {
+                    cancel.cancel = true;
+                    client.destroy(Client.StopCodes.CONNECTION_TIMEOUT);
+                }, 1000 /*s*/ * 60 /*m*/ * 3);
+
+                const serverOffer = JSON.parse(await OneDriveSignal.postAssignment(pc, gameID, sessionId, cancel));
+
+                await client.connect(sessionId, serverOffer, {
                     encoder_bitrate: 12,
                     app_ss_endpoint: 'localhost',
                     app_ss_port: 7173,
                 });
+
+                clearTimeout(connectionTimeout);
             });
         }
 
@@ -99,8 +110,7 @@
             pcList.style.display = 'none';
             container.style.display = 'block';
 
-            const serverOffer = JSON.parse(await OneDriveSignal.postAssignment(pc, gameID, sessionId));
-            const code = await runClient(signalFactory, element, sessionId, serverOffer);
+            const code = await runClient(pc, gameID, signalFactory, element, sessionId);
 
             pcList.style.display = '';
             container.style.display = '';

@@ -56,7 +56,8 @@ export class OneDriveSignal {
         }, restartDelay, shouldCancel);
     }
 
-    static async postAssignment(pc, gameID, sessionId) {
+    static async postAssignment(pc, gameID, sessionId, cancellation) {
+        cancellation = cancellation || { cancel: false };
         const response = await makeRequest('special/approot:/PCs/' + pc + '/'
             + sessionId + '.ass.client:/content', {
             method: 'PUT',
@@ -68,7 +69,7 @@ export class OneDriveSignal {
             throw new Error('Failed to create assignment file');
 
         var serverSdp = null;
-        let shouldCancel = () => !!serverSdp;
+        let shouldCancel = () => !!serverSdp || cancellation.cancel;
         let restartDelay = async (link) => {
             await wait(1000);
             return link;
@@ -85,6 +86,9 @@ export class OneDriveSignal {
             }
             throw new Error('Failed to retrieve server SDP');
         }, restartDelay, shouldCancel);
+
+        if (serverSdp === null && cancellation.cancel)
+            throw new Error('postAssignment cancelled');
 
         return serverSdp;
     }
