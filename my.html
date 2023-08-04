@@ -38,15 +38,17 @@
         <video autoplay></video>
     </div>
 
-    <div id="launcher">
+    <div id="launcher" style="text-align: initial;">
         <div id="no-pcs" style="display: none;">
             <h2>No PCs connected</h2>
         </div>
         <select id="game-list" style="display: none;"></select>
         <div id="game-details" style="display: none;">
-            <div id="game-title"></div>
-            <button id="launch-button" type="button">Play</button>
-            <span id="game-pc"></span>
+            <h1 id="game-title"></h1>
+            <div>
+                <button id="launch-button" type="button">Play</button>
+                <span id="game-pc"></span>
+            </div>
         </div>
     </div>
 
@@ -162,7 +164,7 @@
                 list.size = list.size + 1;
                 list.appendChild(gameItem);
             }
-        }      
+        }
 
         async function reloadGameList() {
             gameList.innerHTML = '';

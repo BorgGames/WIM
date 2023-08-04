@@ -1,3 +1,4 @@
+const gameList = document.getElementById('game-list');
 const details = document.getElementById('game-details');
 const titleUI = document.getElementById('game-title');
 const launchButton = document.getElementById('launch-button');
@@ -20,7 +21,7 @@ export class Launcher {
 
     static initialize(games) {
         Launcher.games = games;
-        details.addEventListener('change', gameSelected);
+        gameList.addEventListener('change', gameSelected);
         launchButton.addEventListener('click', launchRequested)
     }
 }
