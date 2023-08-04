@@ -38,7 +38,16 @@
         <video autoplay></video>
     </div>
 
-    <div id="PCs">
+    <div id="launcher">
+        <div id="no-pcs" style="display: none;">
+            <h2>No PCs connected</h2>
+        </div>
+        <select id="game-list" style="display: none;"></select>
+        <div id="game-details" style="display: none;">
+            <div id="game-title"></div>
+            <button id="launch-button" type="button">Play</button>
+            <span id="game-pc"></span>
+        </div>
     </div>
 
     <p style="display: inline-block;">
@@ -56,11 +65,14 @@
         import { ClientAPI } from './js/client-api.js';
         import { getNetworkStatistics } from './js/connectivity-check.js';
         import { OneDriveSignal } from './js/drive-link.js';
+        import { Launcher } from './js/launcher.js';
 
         AudioPlayer.OPUS_WASM = '/js/streaming-client/src/wasm/opus.wasm';
 
         const clientApi = new ClientAPI();
-        const pcList = document.getElementById('PCs');
+        const launcherUI = document.getElementById('launcher');
+        const gameList = document.getElementById('game-list');
+        const games = {};
 
         function runClient(pc, gameID, signalFactory, element, sessionId) {
             return new Promise(async (resolve) => {
@@ -106,21 +118,21 @@
             });
         }
 
-        async function launch(pc, gameID) {
+        async function launch(gameOffer) {
             const sessionId = crypto.randomUUID();
             const signalFactory = (onFatal) => {
-                return new OneDriveSignal(pc, onFatal);
+                return new OneDriveSignal(gameOffer.pc, onFatal);
             };
 
             const container = document.querySelector('.video-container');
             const element = document.querySelector('video');
 
-            pcList.style.display = 'none';
+            launcherUI.style.display = 'none';
             container.style.display = 'block';
 
-            const code = await runClient(pc, gameID, signalFactory, element, sessionId);
+            const code = await runClient(gameOffer.pc, gameOffer.Uri, signalFactory, element, sessionId);
 
-            pcList.style.display = '';
+            launcherUI.style.display = '';
             container.style.display = '';
 
             element.src = '';
@@ -130,47 +142,67 @@
                 alert(`Exit code: ${code}`);
         }
 
-        async function getGames(pc, li) {
+        async function getGames(pc, list) {
             const response = await OneDrive.makeRequest(`special/approot:/PCs/${pc}.games.json:/content`);
             const items = await response.json();
             for (const item of items) {
-                const gameItem = document.createElement('div');
-                const button = document.createElement('button');
-                button.innerText = item.Title;
-                button.onclick = () => {
-                    launch(pc, item.Uri);
+                item.pc = pc;
+                if (games.hasOwnProperty(item.Uri)) {
+                    games[item.Uri].offers.push(item);
+                    continue;
+                }
+                games[item.Uri] = {
+                    offers: [item],
+                    title: item.Title,
                 };
-                gameItem.appendChild(button);
-                li.appendChild(gameItem);
-            }
-        }
 
-        async function getPCs() {
+                const gameItem = document.createElement('option');
+                gameItem.innerText = item.Title;
+                gameItem.value = item.Uri;
+                list.size = list.size + 1;
+                list.appendChild(gameItem);
+            }
+        }      
+
+        async function reloadGameList() {
+            gameList.innerHTML = '';
+            gameList.size = 0;
+
             const response = await OneDrive.makeRequest('special/approot:/PCs:/children');
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             const json = await response.json();
             const items = json.value;
-            const listUI = document.getElementById('PCs');
             for (const item of items) {
                 if (!item.hasOwnProperty('folder')) continue;
-                const li = document.createElement('div');
-                const title = document.createElement('h3');
-                title.innerText = item.name;
-                li.appendChild(title);
+                await getGames(item.name, gameList);
+            }
 
-                await getGames(item.name, li);
-                listUI.appendChild(li);
+            if (items.length === 0) {
+                document.getElementById('no-pcs').style.display = 'block';
+                gameList.style.display = 'none';
+            } else {
+                document.getElementById('no-pcs').style.display = 'none';
+                gameList.style.display = 'block';
+            }
+
+            if (gameList.options.length === 0) {
+                Launcher.selectGame(null);
+            } else {
+                Launcher.selectGame(gameList.options[0].value);
             }
         }
 
         async function main() {
+            Launcher.launch = launch;
+            Launcher.initialize(games);
+
             await OneDrive.login();
 
             await OneDrive.ensureBorgTag();
 
-            await getPCs();
+            await reloadGameList();
         }
 
         main();

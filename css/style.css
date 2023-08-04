@@ -1,3 +1,32 @@
+body {
+    background: #1e1e1e;
+    color: #cedada;
+}
+
+#launcher::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+#launcher > #game-list {
+    display: block;
+    float: left;
+    width: 20%;
+
+    overflow-y: auto;
+
+    background: #1e1e1e;
+    color: #cedada;
+    outline: none;
+    border: 0;
+}
+
+#launcher > #game-details {
+    float: left;
+    width: 80%;
+}
+
 .video-container {
     background: #000;
     position: fixed;
