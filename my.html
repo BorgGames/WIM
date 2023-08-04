@@ -138,7 +138,7 @@
                 const button = document.createElement('button');
                 button.innerText = item.Title;
                 button.onclick = () => {
-                    launch(pc, item.ID);
+                    launch(pc, item.Uri);
                 };
                 gameItem.appendChild(button);
                 li.appendChild(gameItem);
