@@ -1,6 +1,8 @@
 import { deltaStream, makeRequest } from "./onedrive.js";
 import { wait } from "./streaming-client/src/util.js";
 
+// TODO reduce traffic by using https://learn.microsoft.com/en-us/graph/query-parameters
+
 export class OneDriveSignal {
     async connect(cfg, sessionId, answer, onCandidate) {
         this.onCandidate = onCandidate;
