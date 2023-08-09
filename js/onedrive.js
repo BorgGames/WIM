@@ -74,10 +74,16 @@ export async function login() {
     } catch (err) {
         if (err instanceof msal.InteractionRequiredAuthError) {
             tokenResponse = await clientApp.acquireTokenRedirect(loginRequest);
+        } else if (err instanceof msal.BrowserAuthError && err.errorCode === 'monitor_window_timeout'
+            && +localStorage.getItem('onedrive-login-failures') < 3) {
+            localStorage.setItem('onedrive-login-failures', +localStorage.getItem('onedrive-login-failures') + 1);
+            tokenResponse = await clientApp.acquireTokenRedirect(loginRequest);
         } else {
             throw err;
         }
     }
+    
+    localStorage.removeItem('onedrive-login-failures');
 
     accessToken = tokenResponse.accessToken;
 }
