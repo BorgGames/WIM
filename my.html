@@ -19,12 +19,6 @@
     <title>Games on my PCs - Borg Games</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        button.action {
-            font-size: larger;
-            text-transform: uppercase;
-            padding: 0.5vh 1vh;
-        }
-
         a[href] {
             color: white;
         }
@@ -32,8 +26,6 @@
 </head>
 
 <body style="text-align: center; background: #1e1e1e; color: #cedada;">
-    <h1>Games on my PCs</h1>
-
     <div class="video-container">
         <video autoplay></video>
     </div>
@@ -47,7 +39,7 @@
             <h1 id="game-title"></h1>
             <div>
                 <button id="launch-button" type="button">Play</button>
-                <span id="game-pc"></span>
+                <select id="game-pc"></select>
             </div>
         </div>
     </div>
@@ -65,9 +57,11 @@
         import { AudioPlayer } from './js/streaming-client/src/audio.js';
         import { Client } from './js/streaming-client/src/client.js';
         import { ClientAPI } from './js/client-api.js';
-        import { getNetworkStatistics } from './js/connectivity-check.js';
         import { OneDriveSignal } from './js/drive-link.js';
+        import { OneDriveRunningGames } from './js/drive-gamefs.js';
+        import { GameID } from './js/gid.js';
         import { Launcher } from './js/launcher.js';
+        import * as My from "./js/my.js";
 
         AudioPlayer.OPUS_WASM = '/js/streaming-client/src/wasm/opus.wasm';
 
@@ -76,7 +70,7 @@
         const gameList = document.getElementById('game-list');
         const games = {};
 
-        function runClient(pc, gameID, signalFactory, element, sessionId) {
+        function runClient(pc, signalFactory, element, sessionId, timeout) {
             return new Promise(async (resolve) => {
                 //set up client object with an event callback: gets connect, status, chat, and shutter events
                 const client = new Client(clientApi, signalFactory, element, (event) => {
@@ -87,7 +81,9 @@
                         resolve(event.code);
                     }
                 }, async (name, channel) => {
-                    return getNetworkStatistics(channel);
+                    await My.waitForCommandRequest(channel);
+                    channel.send(sessionId);
+                    await My.waitForCommandRequest(channel);
                 });
                 //set up useful hotkeys that call client methods: destroy can also be used to cancel pending connection
                 const hotkeys = (event) => {
@@ -101,22 +97,20 @@
                 };
                 document.addEventListener('keydown', hotkeys, true);
 
-                const cancel = { cancel: false };
+                try {
+                    const offer = await OneDriveSignal.getServerOffer(pc, timeout);
 
-                const connectionTimeout = setTimeout(() => {
-                    cancel.cancel = true;
-                    client.destroy(Client.StopCodes.CONNECTION_TIMEOUT);
-                }, 1000 /*s*/ * 60 /*m*/ * 3);
-
-                const serverOffer = JSON.parse(await OneDriveSignal.postAssignment(pc, gameID, sessionId, cancel));
-
-                await client.connect(sessionId, serverOffer, {
-                    encoder_bitrate: 12,
-                    app_ss_endpoint: 'localhost',
-                    app_ss_port: 7173,
-                });
-
-                clearTimeout(connectionTimeout);
+                    await Promise.race([
+                        timeout,
+                        client.connect(offer.session, offer.sdp, {
+                            encoder_bitrate: 12,
+                            app_ss_endpoint: 'localhost',
+                            app_ss_port: 7173,
+                        })]);
+                } catch (e) {
+                    console.error(e);
+                    resolve(Client.StopCodes.CONNECTION_TIMEOUT);
+                }
             });
         }
 
@@ -132,16 +126,32 @@
             launcherUI.style.display = 'none';
             container.style.display = 'block';
 
-            const code = await runClient(gameOffer.pc, gameOffer.Uri, signalFactory, element, sessionId);
+            const timeout = new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error('connection timed out'));
+                }, 1000 /*s*/ * 60 /*m*/ * 3);
+            });
 
-            launcherUI.style.display = '';
-            container.style.display = '';
+            const exe = GameID.tryGetExe(gameOffer.Uri);
+            try {
+                const run = await Promise.all([
+                    runClient(gameOffer.pc, signalFactory, element, exe + '\\' + sessionId, timeout),
+                    OneDriveRunningGames.launch(gameOffer.pc, exe, sessionId, timeout)
+                ]);
+                const code = run[0];
 
-            element.src = '';
-            element.load();
+                if (code !== 0)
+                    alert(`Exit code: ${code}`);
+            } catch (e) {
+                console.log(e);
+                alert(e);
+            } finally {
+                launcherUI.style.display = '';
+                container.style.display = '';
 
-            if (code !== 0)
-                alert(`Exit code: ${code}`);
+                element.src = '';
+                element.load();
+            }
         }
 
         async function getGames(pc, list) {
@@ -149,6 +159,11 @@
             const items = await response.json();
             for (const item of items) {
                 item.pc = pc;
+                const exe = GameID.tryGetExe(item.Uri);
+                if (exe === null) {
+                    console.warn("Unsupported uri: " + item.Uri);
+                    continue;
+                }
                 if (games.hasOwnProperty(item.Uri)) {
                     games[item.Uri].offers.push(item);
                     continue;

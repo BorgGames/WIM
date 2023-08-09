@@ -15,7 +15,16 @@ export class Launcher {
         details.style.display = 'block';
         const game = Launcher.games[uri];
         titleUI.innerText = game.title;
-        gamePC.innerText = game.offers[0].pc;
+        while(gamePC.options.length > 0) {
+            gamePC.options[0].remove();
+         }
+        for(const offer of game.offers){
+            const option = document.createElement("option");
+            option.value = offer.pc;
+            option.innerText = game.offers[0].pc;
+            gamePC.appendChild(option);
+        }
+        gamePC.disabled = game.offers.length < 2;
         Launcher.selectedGame = game;
     }
 

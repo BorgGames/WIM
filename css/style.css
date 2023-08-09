@@ -20,6 +20,8 @@ body {
 #game-pc {
     margin: 0 1em;
     color: #cedada51;
+    background: #1e1e1e;
+    padding: 0.1em 0.3em;
 }
 
 #launcher::after {

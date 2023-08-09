@@ -1,5 +1,5 @@
-import { deltaStream, makeRequest } from "./onedrive.js";
-import { wait } from "./streaming-client/src/util.js";
+import {deltaStream, makeRequest} from "./onedrive.js";
+import {wait} from "./streaming-client/src/util.js";
 
 // TODO reduce traffic by using https://learn.microsoft.com/en-us/graph/query-parameters
 
@@ -10,16 +10,20 @@ export class OneDriveSignal {
         this.answer = answer;
         this.candidateIndex = 0;
 
-        this.submitAnswer();
+        this.submitAnswer().then(r => console.debug('answer submitted'));
 
-        this.fetchCandidates();
+        this.fetchCandidates().then(r => console.debug('candidates fetch stopped'));
+    }
+    
+    sessionPath() {
+        return 'special/approot:/PCs/' + this.pc + '/connections/' + this.sessionId;
     }
 
     async submitAnswer() {
         const response = await makeRequest('special/approot:/PCs/'
-            + this.pc + '/' + this.sessionId + '.sdp.client:/content', {
+            + this.pc + '/connections/' + this.sessionId + '.sdp.client:/content', {
             method: 'PUT',
-            headers: { 'Content-Type': 'text/plain' },
+            headers: {'Content-Type': 'text/plain'},
             body: JSON.stringify(this.answer)
         });
 
@@ -28,10 +32,10 @@ export class OneDriveSignal {
     }
 
     async sendCandidate(candidate) {
-        const response = await makeRequest('special/approot:/PCs/'
-            + this.pc + '/' + this.sessionId + this.candidateIndex++ + '.ice.client:/content', {
+        const response = await makeRequest(this.sessionPath() + '/ice/'
+            + this.candidateIndex++ + '.ice.client:/content', {
             method: 'PUT',
-            headers: { 'Content-Type': 'text/plain' },
+            headers: {'Content-Type': 'text/plain'},
             body: candidate
         });
 
@@ -45,7 +49,7 @@ export class OneDriveSignal {
             await wait(1000);
             return link;
         };
-        await deltaStream('special/approot:/PCs/' + this.pc, async (candidate) => {
+        await deltaStream(this.sessionPath() + '/ice', async (candidate) => {
             if (!candidate.hasOwnProperty('file')) return;
             if (!candidate.name.endsWith('.ice')) return;
             const downloadUrl = candidate['@microsoft.graph.downloadUrl'];
@@ -58,41 +62,33 @@ export class OneDriveSignal {
         }, restartDelay, shouldCancel);
     }
 
-    static async postAssignment(pc, gameID, sessionId, cancellation) {
-        cancellation = cancellation || { cancel: false };
-        const response = await makeRequest('special/approot:/PCs/' + pc + '/'
-            + sessionId + '.ass.client:/content', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'text/plain' },
-            body: '' + gameID
-        });
+    static async getServerOffer(pc, timeout) {
+        let cancelled = false;
+        timeout.then(() => cancelled = true);
 
-        if (response.status !== 201)
-            throw new Error('Failed to create assignment file');
-
-        var serverSdp = null;
-        let shouldCancel = () => !!serverSdp || cancellation.cancel;
+        const offer = {
+            sdp: null,
+        };
+        let shouldCancel = () => !!offer.sdp || cancelled;
         let restartDelay = async (link) => {
             await wait(1000);
             return link;
         };
-        const sdpNameUpper = pc.toUpperCase() + ".SDP";
 
-        await deltaStream('special/approot:/PCs/' + pc, async (candidate) => {
+        await deltaStream('special/approot:/PCs/' + pc + '/connections', async (candidate) => {
             if (!candidate.hasOwnProperty('file')) return;
-            if (candidate.name.toUpperCase() !== sdpNameUpper) return;
+            if (!candidate.name.endsWith('.sdp')) return;
             const sdpResponse = await fetch(candidate['@microsoft.graph.downloadUrl']);
             if (sdpResponse.ok) {
-                serverSdp = await sdpResponse.text();
-                return;
+                offer.sdp = JSON.parse(await sdpResponse.text());
+                offer.session = candidate.name.substring(0, candidate.name.length - '.sdp'.length);
             }
-            throw new Error('Failed to retrieve server SDP');
         }, restartDelay, shouldCancel);
 
-        if (serverSdp === null && cancellation.cancel)
-            throw new Error('postAssignment cancelled');
+        if (offer.sdp === null && cancelled)
+            throw new Error('cancelled');
 
-        return serverSdp;
+        return offer;
     }
 
     cfgDefaults(cfg) {
