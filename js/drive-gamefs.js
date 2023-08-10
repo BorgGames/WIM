@@ -44,4 +44,37 @@ export class OneDriveRunningGames {
 
         return result;
     }
+
+    static async getRunning(pc, gameID, timeout) {
+        if (gameID.indexOf('/') !== -1)
+            throw new Error('Invalid game ID: ' + gameID);
+        let cancelled = false;
+        timeout.then(() => cancelled = true);
+        const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
+        const response = await makeRequest(gamePath
+            + ':/children?filter=file ne null and (endswith(name,\'.game\') or endswith(name, \'.jpg\'))');
+
+        if (response.status === 404)
+            return null;
+
+        if (response.status !== 200)
+            throw new Error('Failed to request game launch');
+
+        const items = await response.json();
+        const result = {};
+        for (const item of items.value) {
+            const session = item.name.substring(0, item.name.lastIndexOf('.'));
+            if (!result.hasOwnProperty(session))
+                result[session] = {};
+            if (item.name.endsWith('.jpg'))
+                result[session].image = item['@microsoft.graph.downloadUrl'];
+            if (item.name.endsWith('.game'))
+                result[session].running = true;
+        }
+        for (const [session, info] of Object.entries(result)) {
+            if (!info.hasOwnProperty('running'))
+                delete result[session];
+        }
+        return result;
+    }
 }

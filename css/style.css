@@ -3,6 +3,11 @@ body {
     color: #cedada;
 }
 
+.game-stream-thumbnail {
+    width: auto;
+    height: 13em;
+}
+
 #launch-button {
     padding: 0.3em 1.5em;
     font-size: large;
