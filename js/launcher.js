@@ -1,6 +1,6 @@
-import { OneDriveRunningGames as GameFS } from "./drive-gamefs.js";
+import {OneDriveRunningGames as GameFS} from "./drive-gamefs.js";
 import * as util from "./streaming-client/src/util.js";
-import { GameID } from "./gid.js";
+import {GameID} from "./gid.js";
 
 const gameList = document.getElementById('game-list');
 const details = document.getElementById('game-details');
@@ -63,6 +63,9 @@ async function loadRunning(to, pc, exe) {
         const ui = document.createElement('a');
         ui.title = "Click to connect";
         ui.href = `#pc=${pc}&id=${session}&game=${exe}`;
+        ui.dataset.session = session;
+        ui.addEventListener('click', connectRequested);
+
         const thumbnail = document.createElement('img');
         thumbnail.alt = 'Session ' + session;
         thumbnail.classList.add('game-stream-thumbnail');
@@ -70,6 +73,7 @@ async function loadRunning(to, pc, exe) {
             thumbnail.src = info.image;
         else
             thumbnail.src = "img/placeholder.png";
+
         ui.appendChild(thumbnail);
         pcUI.appendChild(ui);
     }
@@ -78,6 +82,11 @@ async function loadRunning(to, pc, exe) {
 
 function gameSelected(e) {
     Launcher.selectGame(e.target.value);
+}
+
+function connectRequested(e) {
+    e.preventDefault();
+    Launcher.launch(Launcher.selectedGame.offers[0], e.currentTarget.dataset.session);
 }
 
 function launchRequested(e) {

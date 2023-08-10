@@ -4,7 +4,7 @@ import { wait } from "./streaming-client/src/util.js";
 export class OneDriveRunningGames {
     static async launch(pc, gameID, sessionID, timeout) {
         let cancelled = false;
-        timeout.then(() => cancelled = true);
+        timeout.catch(() => cancelled = true);
         const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
         const sessionPath = gamePath + '/' + sessionID;
         const response = await makeRequest(sessionPath + '.game:/content', {
@@ -19,7 +19,7 @@ export class OneDriveRunningGames {
         var result = null;
         let shouldCancel = () => !!result || cancelled;
         let restartDelay = async (link) => {
-            await wait(1000);
+            await wait(5000);
             return link;
         };
 
@@ -44,12 +44,23 @@ export class OneDriveRunningGames {
 
         return result;
     }
+    
+    static async isRunning(pc, gameID, sessionID, timeout) {
+        const running = await OneDriveRunningGames.getRunning(pc, gameID, timeout);
+        return running && running.hasOwnProperty(sessionID);
+    }
+    
+    static async assertRunning(pc, gameID, sessionID, timeout) {
+        const isRunning = await OneDriveRunningGames.isRunning(pc, gameID, sessionID, timeout);
+        if (!isRunning)
+            throw new Error('Game exited');
+    }
 
     static async getRunning(pc, gameID, timeout) {
         if (gameID.indexOf('/') !== -1)
             throw new Error('Invalid game ID: ' + gameID);
         let cancelled = false;
-        timeout.then(() => cancelled = true);
+        timeout.catch(() => cancelled = true);
         const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
         const response = await makeRequest(gamePath
             + ':/children?filter=file ne null and (endswith(name,\'.game\') or endswith(name, \'.jpg\'))');

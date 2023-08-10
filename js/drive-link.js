@@ -14,7 +14,7 @@ export class OneDriveSignal {
 
         this.fetchCandidates().then(r => console.debug('candidates fetch stopped'));
     }
-    
+
     sessionPath() {
         return 'special/approot:/PCs/' + this.pc + '/connections/' + this.sessionId;
     }
@@ -45,8 +45,18 @@ export class OneDriveSignal {
 
     async fetchCandidates() {
         let shouldCancel = () => this.stopCode !== 0;
+        const begun_ms = performance.now();
+        const seen = new Set();
         let restartDelay = async (link) => {
-            await wait(1000);
+            if (seen.size > 1) {
+                await wait(3 * 60000);
+                return link;
+            }
+            const elapsed_ms = performance.now() - begun_ms;
+            const delay = elapsed_ms < 5000 ? 1000
+                : elapsed_ms < 60000 ? 5000
+                    : 3 * 60000;
+            await wait(delay);
             return link;
         };
         await deltaStream(this.sessionPath() + '/ice', async (candidate) => {
@@ -58,13 +68,14 @@ export class OneDriveSignal {
             if (!candidateResponse.ok)
                 console.error('Failed to fetch ICE candidate', candidateResponse.status, candidateResponse.statusText);
             const jsonText = await candidateResponse.text();
+            seen.add(candidate.name);
             this.onCandidate(jsonText, null);
         }, restartDelay, shouldCancel);
     }
 
     static async getServerOffer(pc, timeout) {
         let cancelled = false;
-        timeout.then(() => cancelled = true);
+        timeout.catch(() => cancelled = true);
 
         const offer = {
             sdp: null,

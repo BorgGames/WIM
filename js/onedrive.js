@@ -110,7 +110,7 @@ export async function ensureBorgTag() {
 }
 
 export async function deltaStream(resource, handler, restartDelay, shouldCancel) {
-    var link = resource + ':/delta';
+    let link = resource + ':/delta';
     while (!shouldCancel()) {
         var response = await makeRequest(link);
 

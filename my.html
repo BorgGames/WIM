@@ -51,6 +51,7 @@
         integrity="sha384-PARf28kmic36Ve+O3DnUerRXFtOQ7ZDqRDGpLcbljly5/N39T2OV3kt3QsWOKeAX"
         crossorigin="anonymous"></script>
     <script type="module">
+        import * as util from './js/streaming-client/src/util.js';
         import * as OneDrive from './js/onedrive.js';
 
         import { AudioPlayer } from './js/streaming-client/src/audio.js';
@@ -60,6 +61,7 @@
         import { OneDriveRunningGames } from './js/drive-gamefs.js';
         import { GameID } from './js/gid.js';
         import { Launcher } from './js/launcher.js';
+
         import * as My from "./js/my.js";
 
         AudioPlayer.OPUS_WASM = '/js/streaming-client/src/wasm/opus.wasm';
@@ -112,8 +114,7 @@
             });
         }
 
-        async function launch(gameOffer) {
-            const sessionId = crypto.randomUUID();
+        async function launch(gameOffer, sessionId) {
             const signalFactory = (onFatal) => {
                 return new OneDriveSignal(gameOffer.pc, onFatal);
             };
@@ -124,17 +125,18 @@
             launcherUI.style.display = 'none';
             container.style.display = 'block';
 
-            const timeout = new Promise((_, reject) => {
-                setTimeout(() => {
-                    reject(new Error('connection timed out'));
-                }, 1000 /*s*/ * 60 /*m*/ * 3);
-            });
+            const timeout = util.timeout(1000 /*s*/ * 60 /*m*/ * 3);
 
             const exe = GameID.tryGetExe(gameOffer.Uri);
             try {
+                const launch = !sessionId;
+                if (!sessionId)
+                    sessionId = crypto.randomUUID();
                 const run = await Promise.all([
                     runClient(gameOffer.pc, signalFactory, element, exe + '\\' + sessionId, timeout),
-                    OneDriveRunningGames.launch(gameOffer.pc, exe, sessionId, timeout)
+                    launch
+                        ? OneDriveRunningGames.launch(gameOffer.pc, exe, sessionId, timeout)
+                        : OneDriveRunningGames.assertRunning(gameOffer.pc, exe, sessionId, timeout)
                 ]);
                 const code = run[0];
 
@@ -149,6 +151,8 @@
 
                 element.src = '';
                 element.load();
+
+                Launcher.selectGame(gameOffer.Uri);
             }
         }
 
