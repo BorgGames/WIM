@@ -108,8 +108,7 @@
                             app_ss_port: 7173,
                         })]);
                 } catch (e) {
-                    console.error(e);
-                    resolve(Client.StopCodes.CONNECTION_TIMEOUT);
+                    resolve(e);
                 }
             });
         }
@@ -143,7 +142,7 @@
                 if (code !== 0)
                     alert(`Exit code: ${code}`);
             } catch (e) {
-                console.log(e);
+                console.error(e);
                 alert(e);
             } finally {
                 launcherUI.style.display = '';
