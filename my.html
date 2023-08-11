@@ -103,7 +103,7 @@
                     await Promise.race([
                         timeout,
                         client.connect(offer.session, offer.sdp, {
-                            encoder_bitrate: 12,
+                            encoder_bitrate: parseInt(localStorage.getItem('encoder_bitrate')) || 1,
                             app_ss_endpoint: 'localhost',
                             app_ss_port: 7173,
                         })]);
