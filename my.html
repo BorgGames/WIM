@@ -92,7 +92,7 @@
                     if (event.code === 'Backquote' && event.ctrlKey && event.altKey) {
                         client.destroy(0);
                     } else if (event.code === 'KeyW' && event.ctrlKey && event.altKey) {
-                        toggleFullscreen(client.element);
+                        util.toggleFullscreen(client.element);
                     }
                 };
                 document.addEventListener('keydown', hotkeys, true);
