@@ -66,7 +66,7 @@ export class OneDriveRunningGames {
             + ':/children?filter=file ne null and (endswith(name,\'.game\') or endswith(name, \'.jpg\'))');
 
         if (response.status === 404)
-            return null;
+            return {};
 
         if (response.status !== 200)
             throw new Error('Failed to request game launch');
