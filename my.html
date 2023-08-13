@@ -28,6 +28,7 @@
 <body style="text-align: center; background: #1e1e1e; color: #cedada;">
     <div class="video-container">
         <video autoplay></video>
+        <h3 id="game-status"></h3>
     </div>
 
     <div id="launcher" style="text-align: initial;">
@@ -69,6 +70,7 @@
         const clientApi = new ClientAPI();
         const launcherUI = document.getElementById('launcher');
         const gameList = document.getElementById('game-list');
+        const status = document.getElementById('game-status');
 
         function runClient(pc, signalFactory, element, sessionId, timeout) {
             return new Promise(async (resolve) => {
@@ -76,9 +78,14 @@
                 const client = new Client(clientApi, signalFactory, element, (event) => {
                     console.log('EVENT', event);
 
-                    if (event.type === 'exit') {
+                    switch (event.type){
+                    case 'exit':
                         document.removeEventListener('keydown', hotkeys, true);
                         resolve(event.code);
+                        break;
+                    case 'status':
+                        status.innerText = event.msg;
+                        break;
                     }
                 }, async (name, channel) => {
                     await My.waitForCommandRequest(channel);
@@ -131,6 +138,7 @@
                 const launch = !sessionId;
                 if (!sessionId)
                     sessionId = crypto.randomUUID();
+                status.innerText = 'looking for the node...';
                 const run = await Promise.all([
                     runClient(gameOffer.pc, signalFactory, element, exe + '\\' + sessionId, timeout),
                     launch
