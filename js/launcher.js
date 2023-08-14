@@ -60,22 +60,37 @@ async function loadRunning(to, pc, exe) {
     head.innerText = pc;
     pcUI.appendChild(head);
     for (const [session, info] of instances) {
-        const ui = document.createElement('a');
+        const container = document.createElement('fieldset');
+        container.className = "game-connect";
+        
+        const ui = document.createElement('button');
         ui.title = "Click to connect";
-        ui.href = `#pc=${pc}&id=${session}&game=${exe}`;
+        ui.className = "connect"; 
+        ui.dataset.exe = exe;
         ui.dataset.session = session;
+        ui.dataset.pc = pc;
         ui.addEventListener('click', connectRequested);
 
         const thumbnail = document.createElement('img');
         thumbnail.alt = 'Session ' + session;
-        thumbnail.classList.add('game-stream-thumbnail');
+        thumbnail.className = 'game-stream-thumbnail';
         if (info.hasOwnProperty('image'))
             thumbnail.src = info.image;
         else
             thumbnail.src = "img/placeholder.png";
-
         ui.appendChild(thumbnail);
-        pcUI.appendChild(ui);
+
+        const stop = document.createElement('button');
+        stop.innerText = '✖';
+        stop.className = 'stop';
+        stop.title = 'Stop';
+        Object.assign(stop.dataset, ui.dataset);
+        stop.addEventListener('click', stopRequested);
+        ui.appendChild(stop);
+        
+        container.appendChild(ui);
+
+        pcUI.appendChild(container);
     }
     to.appendChild(pcUI);
 }
@@ -91,4 +106,27 @@ function connectRequested(e) {
 
 function launchRequested(e) {
     Launcher.launch(Launcher.selectedGame.offers[0]);
+}
+
+async function stopRequested(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const exe = e.target.dataset.exe;
+    const session = e.target.dataset.session;
+    const pc = e.target.dataset.pc;
+    const node = e.target.closest('fieldset');
+    node.disabled = true;
+
+    try {
+        await GameFS.stop(pc, exe, session);
+        try{
+            await GameFS.waitForStop(pc, exe, session, util.timeout(60000));
+        } catch (e){
+            console.error(e);
+        }
+        node.remove();
+    } catch (e) {
+        node.disabled = false;
+        throw e;
+    }
 }

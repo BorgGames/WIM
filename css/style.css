@@ -6,6 +6,44 @@ body {
 .game-stream-thumbnail {
     width: auto;
     height: 13em;
+    padding: 0;
+    margin: 0;
+    vertical-align: middle;
+}
+
+.game-connect {
+    display: inline-block;
+    position: relative;
+    padding: 0;
+    border: none;
+    margin: 0 2em 0.4em 0;
+}
+
+.game-connect:disabled {
+    opacity: 0.5;
+}
+
+.game-connect .connect {
+    border: none;
+    padding: 0;
+}
+
+.game-connect .connect:enabled {
+    cursor: pointer;
+}
+
+.game-connect .stop {
+    color: white;
+    position: absolute;
+    right: 0;
+    padding: 0.2em 0.5em;
+    background: transparent;
+    border: none;
+    font-size: 110%;
+}
+
+.game-connect .stop:hover:enabled, .game-connect .stop:focus:enabled {
+    background: #A1A1A180;
 }
 
 #launch-button {

@@ -44,12 +44,12 @@ export class OneDriveRunningGames {
 
         return result;
     }
-    
+
     static async isRunning(pc, gameID, sessionID, timeout) {
         const running = await OneDriveRunningGames.getRunning(pc, gameID, timeout);
         return running && running.hasOwnProperty(sessionID);
     }
-    
+
     static async assertRunning(pc, gameID, sessionID, timeout) {
         const isRunning = await OneDriveRunningGames.isRunning(pc, gameID, sessionID, timeout);
         if (!isRunning)
@@ -87,5 +87,40 @@ export class OneDriveRunningGames {
                 delete result[session];
         }
         return result;
+    }
+
+    static async stop(pc, gameID, sessionID) {
+        const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
+        const sessionPath = gamePath + '/' + sessionID;
+        const response = await makeRequest(sessionPath + '.game', {
+            method: 'DELETE',
+        });
+
+        if (response.status !== 204)
+            throw new Error('Failed to request game stop');
+    }
+    
+    static async waitForStop(pc, gameID, sessionID, timeout) {
+        const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
+
+        let cancelled = false;
+        timeout.catch(() => cancelled = true);
+        while (!cancelled) {
+            const response = await makeRequest(gamePath
+                + ':/children?filter=file ne null and endswith(name,\'.exit\')');
+
+            if (!response.ok)
+                throw new Error('Failed to check exit status');
+
+            const items = await response.json();
+            for (const item of items.value) {
+                if (item.name === sessionID + '.exit')
+                    return true;
+            }
+
+            await wait(500);
+        }
+
+        return false;
     }
 }
