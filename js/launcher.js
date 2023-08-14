@@ -66,6 +66,7 @@ async function loadRunning(to, pc, exe) {
         const ui = document.createElement('button');
         ui.title = "Click to connect";
         ui.className = "connect"; 
+        ui.type = "button";
         ui.dataset.exe = exe;
         ui.dataset.session = session;
         ui.dataset.pc = pc;
@@ -84,6 +85,7 @@ async function loadRunning(to, pc, exe) {
         stop.innerText = '✖';
         stop.className = 'stop';
         stop.title = 'Stop';
+        stop.type = 'button';
         Object.assign(stop.dataset, ui.dataset);
         stop.addEventListener('click', stopRequested);
         ui.appendChild(stop);
