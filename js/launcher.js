@@ -75,10 +75,15 @@ async function loadRunning(to, pc, exe) {
         const thumbnail = document.createElement('img');
         thumbnail.alt = 'Session ' + session;
         thumbnail.className = 'game-stream-thumbnail';
-        if (info.hasOwnProperty('image'))
+        const placeholder = "img/placeholder.png";
+        if (info.hasOwnProperty('image')) {
             thumbnail.src = info.image;
-        else
-            thumbnail.src = "img/placeholder.png";
+            thumbnail.onerror = () => {
+                if (thumbnail.src !== placeholder)
+                    thumbnail.src = "img/placeholder.png";
+            };
+        } else
+            thumbnail.src = placeholder;
         ui.appendChild(thumbnail);
 
         const stop = document.createElement('button');
