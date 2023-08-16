@@ -55,17 +55,15 @@
         import * as util from './js/streaming-client/src/util.js';
         import * as OneDrive from './js/onedrive.js';
 
-        import { AudioPlayer } from './js/streaming-client/src/audio.js';
         import { Client } from './js/streaming-client/src/client.js';
         import { ClientAPI } from './js/client-api.js';
         import { OneDriveSignal } from './js/drive-link.js';
         import { OneDriveRunningGames } from './js/drive-gamefs.js';
         import { GameID } from './js/gid.js';
         import { Launcher } from './js/launcher.js';
+        import { Session } from "./js/session.js";
 
         import * as My from "./js/my.js";
-
-        AudioPlayer.OPUS_WASM = '/js/streaming-client/src/wasm/opus.wasm';
 
         const clientApi = new ClientAPI();
         const launcherUI = document.getElementById('launcher');
@@ -78,7 +76,7 @@
                 const client = new Client(clientApi, signalFactory, element, (event) => {
                     console.log('EVENT', event);
 
-                    switch (event.type){
+                    switch (event.type) {
                     case 'exit':
                         document.removeEventListener('keydown', hotkeys, true);
                         resolve(event.code);
@@ -88,9 +86,13 @@
                         break;
                     }
                 }, async (name, channel) => {
-                    await My.waitForCommandRequest(channel);
-                    channel.send(sessionId);
-                    await My.waitForCommandRequest(channel);
+                    switch (name) {
+                    case 'control':
+                        await Session.waitForCommandRequest(channel);
+                        channel.send(sessionId);
+                        await Session.waitForCommandRequest(channel);
+                        break;
+                    }
                 });
                 //set up useful hotkeys that call client methods: destroy can also be used to cancel pending connection
                 const hotkeys = (event) => {
