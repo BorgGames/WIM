@@ -115,6 +115,10 @@ export async function deltaStream(resource, handler, restartDelay, shouldCancel)
         var response = await makeRequest(link);
 
         if (!response.ok) {
+            if (response.status === 404) {
+                link = await restartDelay(delta[link]);
+                continue;
+            }
             console.error('delta stream error', response.status, response.statusText);
             throw new Error('delta stream HTTP ' + response.status + ': ' + response.statusText);
         }
