@@ -2,12 +2,12 @@
 <html>
 
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="canonical" href="https://borg.games/" />
+    <link rel="canonical" href="https://borg.games/"/>
 
-    <link rel="shortcut icon" href="/favicon.svg" sizes="any" type="image/svg+xml" />
+    <link rel="shortcut icon" href="/favicon.svg" sizes="any" type="image/svg+xml"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -17,9 +17,9 @@
     <meta name="theme-color" content="#000000">
 
     <title>Borg Games - Play in your browser</title>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         button.action {
-            font-size: larger;
             text-transform: uppercase;
             padding: 0.5vh 1vh;
         }
@@ -31,30 +31,48 @@
 </head>
 
 <body style="text-align: center; background: #1e1e1e; color: #cedada;">
-    <h1>Play in your browser</h1>
+<h1 class="no-video">Play in your browser</h1>
 
-    <div class="content">
-        <p style="display: inline-block;">
-        <h2>Minecraft</h2> coming soon
-        </p>
-        <p style="display: inline-block;">
-        <h2>Factorio</h2> coming soon
-        </p>
+<div class="video-container">
+    <video autoplay id="stream"></video>
+    <h1 id="game-status"></h1>
+</div>
 
-        <p style="display: inline-block;">
-        <h2>&nbsp;</h2>
-        </p>
+<div class="content no-video">
+    <p style="display: inline-block;">
+    <h2>Factorio</h2>
+    <button class="action" type="button" id="factorio-demo">Run Demo</button>
+    <br/>
+    <br/>
+    <span class="mute">full game coming soon</span>
+    </p>
 
-        <form style="display: inline-block;" action="https://forms.office.com/r/7LU5EzDLs8">
-            <button class="action" type="submit">Join the waitlist</button>
-        </form>
+    <p style="display: inline-block;">
+    <h2>Minecraft</h2> coming soon
+    </p>
 
-        <p>&nbsp;</p>
+    <p style="display: inline-block;">
+    <h2>&nbsp;</h2>
+    </p>
 
-        <p style="display: inline-block;">
-        <h3><a href="/about">About Borg Queen</a></h3>
-        </p>
-    </div>
+    <form style="display: inline-block;" action="https://forms.office.com/r/7LU5EzDLs8">
+        <button class="action" type="submit" style="font-size: larger;">Join the waitlist</button>
+    </form>
+
+    <p>&nbsp;</p>
+
+    <p style="display: inline-block;">
+    <h3><a href="/about">About Borg Queen</a></h3>
+</div>
 </body>
+
+<script type="module">
+    import {Home} from "./js/home.js";
+
+    const demo = document.getElementById('factorio-demo');
+    demo.onclick = function () {
+        Home.launch();
+    };
+</script>
 
 </html>
