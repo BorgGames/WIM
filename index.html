@@ -41,7 +41,7 @@
 <div class="content no-video">
     <p style="display: inline-block;">
     <h2>Factorio</h2>
-    <button class="action" type="button" id="factorio-demo">Run Demo</button>
+    <button class="action" type="button" id="factorio-demo" disabled title="No nodes available">Run Demo</button>
     <br/>
     <br/>
     <span class="mute">full game coming soon</span>
@@ -68,11 +68,21 @@
 
 <script type="module">
     import {Home} from "./js/home.js";
+    import {Ephemeral} from "./js/ephemeral.js";
 
     const demo = document.getElementById('factorio-demo');
     demo.onclick = function () {
         Home.launch();
     };
+    
+    async function main(){
+        const nodes = await Ephemeral.getNodes();
+        demo.disabled = nodes.length === 0;
+        if (!demo.disabled)
+            demo.title = null;
+    }
+    
+    main();
 </script>
 
 </html>
