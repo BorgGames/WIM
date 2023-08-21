@@ -1,5 +1,7 @@
 ﻿import { wait } from "./streaming-client/src/util.js";
 
+const API = 'https://borg-ephemeral.azurewebsites.net/ephemeral/';
+
 export class Ephemeral {
     async connect(cfg, sessionId, answer, onCandidate) {
         this.onCandidate = onCandidate;
@@ -35,8 +37,9 @@ export class Ephemeral {
             throw new Error('Failed to submit ICE candidate');
     }
     
-    static async getNodes() {
-        const response = await fetch('https://queen-prototype.azurewebsites.net/ephemeral/offers');
+    static async getNodes(endpoint) {
+        endpoint = endpoint || API;
+        const response = await fetch(endpoint + 'offers');
         if (!response.ok)
             throw new Error('Failed to fetch nodes');
 
@@ -73,7 +76,7 @@ export class Ephemeral {
     }
 
     constructor(endpoint) {
-        this.endpoint = endpoint || 'https://queen-prototype.azurewebsites.net/ephemeral/';
+        this.endpoint = endpoint || API;
         this.stopCode = 0;
     }
 
