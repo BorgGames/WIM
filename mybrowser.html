@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="canonical" href="https://borg.games/mybrowser"/>
+
+    <link rel="shortcut icon" href="/favicon.svg" sizes="any" type="image/svg+xml"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#0d0d0d">
+    <meta name="msapplication-TileColor" content="#101010">
+    <meta name="theme-color" content="#000000">
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8997962957139821"
+            crossorigin="anonymous"></script>
+
+    <title>My Browser Info</title>
+</head>
+
+<body style="background: #1e1e1e; color: #cedada;">
+<h1>My Browser Info</h1>
+
+<div class="content">
+    <article>
+        <h2>WebRTC</h2>
+
+        <h3>Decoders</h3>
+        <ul id="decoders">
+
+        </ul>
+
+        <h3>Header extensions</h3>
+        <ul id="header-extensions">
+
+        </ul>
+    </article>
+
+    <h3 style="display: inline-block;"><a href="/about">© Borg Queen, LLC 2023</a></h3>
+
+    <script type="module">
+        function main() {
+            const recv = RTCRtpReceiver.getCapabilities('video');
+
+            const decoders = document.getElementById('decoders');
+            for (const decoder of recv.codecs) {
+                const li = document.createElement('li');
+                li.textContent = JSON.stringify(decoder);
+                decoders.appendChild(li);
+            }
+
+            const headerExtensions = document.getElementById('header-extensions');
+            for (const headerExtension of recv.headerExtensions) {
+                const li = document.createElement('li');
+                li.textContent = JSON.stringify(headerExtension);
+                headerExtensions.appendChild(li);
+            }
+        }
+
+        main();
+    </script>
+</div>
+</body>
+
+</html>
