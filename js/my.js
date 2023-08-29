@@ -7,6 +7,11 @@ export class Games {
 export async function getGames(pc, list) {
     const response = await OneDrive.makeRequest(`special/approot:/PCs/${pc}.games.json:/content`);
     const items = await response.json();
+    if (items.hasOwnProperty('error')) {
+        if (items.error.code !== 'itemNotFound')
+            console.warn('Failed to fetch game from ' + pc, items.error);
+        return;
+    }
     for (const item of items) {
         item.pc = pc;
         const exe = GameID.tryGetExe(item.Uri);
