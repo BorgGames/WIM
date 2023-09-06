@@ -118,11 +118,13 @@ function pcChanged(e) {
 
 function connectRequested(e) {
     e.preventDefault();
-    Launcher.launch(Launcher.selectedGame.offers[0], e.currentTarget.dataset.session);
+    Launcher.launch(e.currentTarget.dataset.pc, e.currentTarget.dataset.exe, e.currentTarget.dataset.session);
 }
 
 function launchRequested(e) {
-    Launcher.launch(JSON.parse(gamePC.options[gamePC.selectedIndex].dataset.offer));
+    let offer = JSON.parse(gamePC.options[gamePC.selectedIndex].dataset.offer);
+    const exe = GameID.tryGetExe(offer.Uri);
+    Launcher.launch(offer.pc, exe);
 }
 
 async function stopRequested(e) {

@@ -137,9 +137,9 @@
             });
         }
 
-        async function launch(gameOffer, sessionId) {
+        async function launch(pc, exe, sessionId) {
             const signalFactory = (onFatal) => {
-                return new OneDriveSignal(gameOffer.pc, onFatal);
+                return new OneDriveSignal(pc, onFatal);
             };
 
             const container = document.querySelector('.video-container');
@@ -150,17 +150,16 @@
 
             const timeout = util.timeout(1000 /*s*/ * 60 /*m*/ * 3);
 
-            const exe = GameID.tryGetExe(gameOffer.Uri);
             try {
                 const launch = !sessionId;
                 if (!sessionId)
                     sessionId = crypto.randomUUID();
                 status.innerText = 'looking for the node...';
                 const run = await Promise.all([
-                    runClient(gameOffer.pc, signalFactory, element, exe + '\\' + sessionId, timeout),
+                    runClient(pc, signalFactory, element, exe + '\\' + sessionId, timeout),
                     launch
-                        ? OneDriveRunningGames.launch(gameOffer.pc, exe, sessionId, timeout)
-                        : OneDriveRunningGames.assertRunning(gameOffer.pc, exe, sessionId, timeout)
+                        ? OneDriveRunningGames.launch(pc, exe, sessionId, timeout)
+                        : OneDriveRunningGames.assertRunning(pc, exe, sessionId, timeout)
                 ]);
                 const code = run[0];
 
@@ -176,7 +175,7 @@
                 element.src = '';
                 element.load();
 
-                Launcher.selectGame(gameOffer.Uri);
+                Launcher.selectGame(Launcher.selectedGame.offers[0].Uri);
             }
         }
 
