@@ -31,6 +31,7 @@ export class Launcher {
         for (const offer of game.offers) {
             const option = document.createElement("option");
             option.value = offer.pc;
+            option.dataset.offer = JSON.stringify(offer);
             option.innerText = offer.pc;
             gamePC.appendChild(option);
             const exe = GameID.tryGetExe(offer.Uri);
@@ -112,7 +113,7 @@ function connectRequested(e) {
 }
 
 function launchRequested(e) {
-    Launcher.launch(Launcher.selectedGame.offers[0]);
+    Launcher.launch(JSON.parse(gamePC.options[gamePC.selectedIndex].dataset.offer));
 }
 
 async function stopRequested(e) {
