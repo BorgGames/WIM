@@ -23,21 +23,25 @@ export class Launcher {
         while (gamePC.options.length > 0) {
             gamePC.options[0].remove();
         }
+        gamePC.removeEventListener('change', pcChanged);
 
         const running = document.createElement('div');
         runningUI.innerHTML = '';
         runningUI.appendChild(running);
 
+        let preferred = localStorage.getItem('lastGamePC-' + uri);
         for (const offer of game.offers) {
             const option = document.createElement("option");
             option.value = offer.pc;
             option.dataset.offer = JSON.stringify(offer);
             option.innerText = offer.pc;
+            option.defaultSelected = offer.pc === preferred;
             gamePC.appendChild(option);
             const exe = GameID.tryGetExe(offer.Uri);
             loadRunning(running, offer.pc, exe);
         }
         gamePC.disabled = game.offers.length < 2;
+        gamePC.addEventListener('change', pcChanged);
 
         Launcher.selectedGame = game;
     }
@@ -105,6 +109,11 @@ async function loadRunning(to, pc, exe) {
 
 function gameSelected(e) {
     Launcher.selectGame(e.target.value);
+}
+
+function pcChanged(e) {
+    let offer = JSON.parse(e.target.options[e.target.selectedIndex].dataset.offer); 
+    localStorage.setItem('lastGamePC-' + offer.Uri, offer.pc);
 }
 
 function connectRequested(e) {
