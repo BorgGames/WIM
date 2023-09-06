@@ -12,4 +12,24 @@ export async function updateIceServers() {
     localStorage.setItem('iceServers', await response.text());
 }
 
+export function getConnectionType(rtc) {
+    const receivers = rtc.getReceivers();
+    for (const receiver of receivers) {
+        if (receiver.track.kind !== "video" || !receiver.transport)
+            continue;
+        let ice = receiver.transport.iceTransport;
+        let pair = ice.getSelectedCandidatePair();
+        if (pair === null)
+            continue;
+
+        for (const candidate of [pair.local, pair.remote]) {
+            if (candidate.type === "relay")
+                return "relay";
+        }
+        return pair.local.type;
+    }
+
+    return "unknown";
+}
+
 const API_KEY = "c8f6f80012a6fff80645fc4194580912564a";

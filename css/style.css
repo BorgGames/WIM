@@ -7,6 +7,23 @@ body {
     opacity: 0.5;
 }
 
+.popup {
+    position: fixed;
+    top: 0;
+    right: 0;
+}
+
+#popup:checked ~ .alert-message {
+    display: none;
+}
+
+.alert-message {
+    background: midnightblue;
+    padding: 0.3em;
+    display: inline-block;
+    font-size: large;
+}
+
 body.video .no-video {
     display: none;
 }

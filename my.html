@@ -29,6 +29,10 @@
     <div class="video-container">
         <video autoplay></video>
         <h1 id="game-status"></h1>
+        <div class="popup">
+            <input type="checkbox" id="popup" checked style="display: none">
+            <label for="popup" class="alert-message">slow connection due to a firewall</label>
+        </div>
     </div>
 
     <div id="launcher" style="text-align: initial;">
@@ -60,7 +64,7 @@
         import { OneDriveSignal } from './js/drive-link.js';
         import { OneDriveRunningGames } from './js/drive-gamefs.js';
         import { GameID } from './js/gid.js';
-        import { getIceServers, updateIceServers } from './js/ice.js';
+        import { getIceServers, updateIceServers, getConnectionType } from './js/ice.js';
         import { Launcher } from './js/launcher.js';
         import { Session } from "./js/session.js";
 
@@ -70,6 +74,8 @@
         const launcherUI = document.getElementById('launcher');
         const gameList = document.getElementById('game-list');
         const status = document.getElementById('game-status');
+        const popup = document.getElementById('popup');
+        const popupContent = document.querySelector('.alert-message');
 
         function runClient(pc, signalFactory, element, sessionId, timeout) {
             return new Promise(async (resolve) => {
@@ -85,6 +91,13 @@
                         break;
                     case 'status':
                         status.innerText = event.msg;
+                        if (!event.msg) {
+                            const connectionType = getConnectionType(client.rtc.rtc);
+                            if (connectionType === 'relay') {
+                                popupContent.innerText = '! slow connection due to a firewall';
+                                popup.checked = false;
+                            }
+                        }
                         break;
                     }
                 }, async (name, channel) => {
