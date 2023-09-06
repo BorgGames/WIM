@@ -60,6 +60,7 @@
         import { OneDriveSignal } from './js/drive-link.js';
         import { OneDriveRunningGames } from './js/drive-gamefs.js';
         import { GameID } from './js/gid.js';
+        import { getIceServers, updateIceServers } from './js/ice.js';
         import { Launcher } from './js/launcher.js';
         import { Session } from "./js/session.js";
 
@@ -72,6 +73,7 @@
 
         function runClient(pc, signalFactory, element, sessionId, timeout) {
             return new Promise(async (resolve) => {
+                const iceServers = getIceServers();
                 //set up client object with an event callback: gets connect, status, chat, and shutter events
                 const client = new Client(clientApi, signalFactory, element, (event) => {
                     console.log('EVENT', event);
@@ -93,6 +95,7 @@
                         await Session.waitForCommandRequest(channel);
                         break;
                     }
+                }, iceServers);
                 });
                 //set up useful hotkeys that call client methods: destroy can also be used to cancel pending connection
                 const hotkeys = (event) => {
@@ -196,6 +199,8 @@
         }
 
         async function main() {
+            updateIceServers().catch(console.error);
+
             Launcher.launch = launch;
             Launcher.initialize(My.Games.games);
 
