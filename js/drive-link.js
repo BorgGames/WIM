@@ -85,10 +85,14 @@ export class OneDriveSignal {
             await wait(1000);
             return link;
         };
+        
+        const connections = 'special/approot:/PCs/' + pc + '/connections';
+        let info = await (await makeRequest(connections)).json();
 
-        await deltaStream('special/approot:/PCs/' + pc + '/connections', async (candidate) => {
+        await deltaStream(connections, async (candidate) => {
             if (!candidate.hasOwnProperty('file')) return;
             if (!candidate.name.endsWith('.sdp')) return;
+            if (candidate.parentReference.id !== info.id) return;
             const sdpResponse = await fetch(candidate['@microsoft.graph.downloadUrl']);
             if (sdpResponse.ok) {
                 offer.sdp = JSON.parse(await sdpResponse.text());
