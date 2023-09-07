@@ -8,6 +8,7 @@ const titleUI = document.getElementById('game-title');
 const launchButton = document.getElementById('launch-button');
 const gamePC = document.getElementById('game-pc');
 const runningUI = document.getElementById('game-running');
+const supportStatus = document.getElementById('support-status');
 
 export class Launcher {
     static async selectGame(uri) {
@@ -17,6 +18,7 @@ export class Launcher {
             return;
         }
 
+        supportStatus.style.display = "borg://exe/factorio" === uri ? "none" : null;
         details.style.display = 'block';
         const game = Launcher.games[uri];
         titleUI.innerText = game.title;
