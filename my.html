@@ -111,6 +111,14 @@
                                 popupContent.innerText = '! slow connection due to a firewall';
                                 popup.checked = false;
                             }
+                            if (appInsights) {
+                                appInsights.trackEvent({
+                                    name: 'connected',
+                                    properties: {
+                                        type: connectionType,
+                                    },
+                                });
+                            }
                         }
                         break;
                     }
