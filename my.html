@@ -90,6 +90,9 @@
         const status = document.getElementById('game-status');
         const popup = document.getElementById('popup');
         const popupContent = document.querySelector('.alert-message');
+        let initiatedAt = 0;
+        let newGame = false;
+        let game = "";
 
         function runClient(pc, signalFactory, element, sessionId, timeout) {
             return new Promise(async (resolve) => {
@@ -116,6 +119,15 @@
                                     name: 'connected',
                                     properties: {
                                         type: connectionType,
+                                    },
+                                });
+                                appInsights.trackMetric({
+                                    name: 'connectTime',
+                                    average: performance.now() - initiatedAt,
+                                    properties: {
+                                        type: connectionType,
+                                        newGame: newGame,
+                                        game: game,
                                     },
                                 });
                             }
@@ -176,6 +188,9 @@
                 const launch = !sessionId;
                 if (!sessionId)
                     sessionId = crypto.randomUUID();
+                newGame = launch;
+                game = exe;
+                initiatedAt = performance.now();
                 status.innerText = 'looking for the node...';
                 const run = await Promise.all([
                     runClient(pc, signalFactory, element, exe + '\\' + sessionId, timeout),
