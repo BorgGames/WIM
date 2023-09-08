@@ -31,7 +31,7 @@ function con(severity, ...args) {
     if (err)
         appInsights.trackException({exception: err, severityLevel: severity, properties: {message: text}});
     else
-        appInsights.trackTrace(text, severity);
+        appInsights.trackTrace({message: text, severity: severity});
 }
 
 if (window.appInsights)
