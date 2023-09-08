@@ -93,15 +93,15 @@ export async function ensureBorgTag() {
     console.log('ensure: ', ensureAppFolder);
 
     const exists = await makeRequest('special/approot:/' + clientID, {});
-    if (exists.status === 404) {
+    if (exists.status === 404 || (await exists.json()).size !== 73) {
         const response = await makeRequest('special/approot:/' + clientID + ':/content', {
             method: 'PUT',
             headers: { 'Content-Type': 'text/plain' },
-            body: ''
+            body: `${crypto.randomUUID()}+${crypto.randomUUID()}`
         });
 
         if (response.status !== 201)
-            throw new Error('Failed to create tag file');
+            throw new Error(`Failed to create tag file: HTTP ${response.status}: ${response.statusText}`);
 
         console.log('PUT Borg tag: ', response);
     } else {
