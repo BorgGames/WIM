@@ -43,8 +43,8 @@
         <video autoplay></video>
         <h1 id="game-status"></h1>
         <div class="popup">
-            <input type="checkbox" id="popup" checked style="display: none">
-            <label for="popup" class="alert-message">slow connection due to a firewall</label>
+            <input type="checkbox" id="popup" checked="checked" style="display: none">
+            <label for="popup" class="alert-message"></label>
         </div>
     </div>
 
@@ -207,6 +207,8 @@
                 console.error(e);
                 alert(e);
             } finally {
+                popup.checked = true;
+
                 launcherUI.style.display = '';
                 container.style.display = '';
 
