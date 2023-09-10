@@ -26,6 +26,20 @@ export async function makeRequest(url, options) {
     }
 }
 
+export async function download(url) {
+    // workaround for https://github.com/microsoftgraph/msgraph-sdk-javascript/issues/388
+    if (url.endsWith(':/content'))
+        throw new RangeError();
+    const response = await makeRequest(url + '?select=id,@microsoft.graph.downloadUrl');
+    if (response.status === 404)
+        return null;
+    if (!response.ok)
+        throw new Error('Failed to download ' + url + ': ' + response.status + ': ' + response.statusText);
+    const item = await response.json();
+    const realUrl = item['@microsoft.graph.downloadUrl'];
+    return await fetch(realUrl);
+}
+
 export async function login() {
     const msalConfig = {
         auth: {
@@ -82,7 +96,7 @@ export async function login() {
             throw err;
         }
     }
-    
+
     localStorage.removeItem('onedrive-login-failures');
 
     accessToken = tokenResponse.accessToken;
@@ -96,7 +110,7 @@ export async function ensureBorgTag() {
     if (exists.status === 404 || (await exists.json()).size !== 73) {
         const response = await makeRequest('special/approot:/' + clientID + ':/content', {
             method: 'PUT',
-            headers: { 'Content-Type': 'text/plain' },
+            headers: {'Content-Type': 'text/plain'},
             body: `${crypto.randomUUID()}+${crypto.randomUUID()}`
         });
 

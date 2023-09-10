@@ -5,13 +5,16 @@ export class Games {
     static games = {};
 }
 export async function getGames(pc, list) {
-    const response = await OneDrive.makeRequest(`special/approot:/PCs/${pc}.games.json:/content`);
-    const items = await response.json();
-    if (items.hasOwnProperty('error')) {
-        if (items.error.code !== 'itemNotFound')
-            console.warn('Failed to fetch game from ' + pc, items.error);
+    let json = null;
+    try {
+        json = await OneDrive.download(`special/approot:/PCs/${pc}.games.json`);
+    } catch (e) {
+        console.warn('Failed to fetch game list from ' + pc, e);
         return;
     }
+    if (json === null)
+        return;
+    const items = await json.json();
     for (const item of items) {
         item.pc = pc;
         const exe = GameID.tryGetExe(item.Uri);
