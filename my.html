@@ -238,6 +238,7 @@
             if (items.length === 0) {
                 noPCs.style.display = 'block';
                 gameList.style.display = 'none';
+                setTimeout(reloadGameList, 30*1000);
             } else {
                 noPCs.style.display = 'none';
                 gameList.style.display = 'block';
