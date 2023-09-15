@@ -76,7 +76,7 @@ export class Home {
                         const info = JSON.parse(offer.peer_connection_offer);
                         const sdp = JSON.parse(info.Offer);
 
-                        const encoder_bitrate = parseInt(localStorage.getItem('encoder_bitrate')) || 1;
+                        const encoder_bitrate = parseInt(localStorage.getItem('encoder_bitrate')) || 2;
 
                         await Promise.race([
                             timeout,
