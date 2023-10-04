@@ -1,8 +1,6 @@
-import {deltaStream, makeRequest} from "./onedrive.js";
+import {MY} from "./onedrive.js";
 import {wait} from "./streaming-client/src/util.js";
-
 // TODO reduce traffic by using https://learn.microsoft.com/en-us/graph/query-parameters
-
 export class OneDriveSignal {
     async connect(cfg, sessionId, answer, onCandidate) {
         this.onCandidate = onCandidate;
@@ -20,7 +18,7 @@ export class OneDriveSignal {
     }
 
     async submitAnswer() {
-        const response = await makeRequest('special/approot:/PCs/'
+        const response = await MY.makeRequest('special/approot:/PCs/'
             + this.pc + '/connections/' + this.sessionId + '.sdp.client:/content', {
             method: 'PUT',
             headers: {'Content-Type': 'text/plain'},
@@ -32,7 +30,7 @@ export class OneDriveSignal {
     }
 
     async sendCandidate(candidate) {
-        const response = await makeRequest(this.sessionPath() + '/ice/'
+        const response = await MY.makeRequest(this.sessionPath() + '/ice/'
             + this.candidateIndex++ + '.ice.client:/content', {
             method: 'PUT',
             headers: {'Content-Type': 'text/plain'},
@@ -59,7 +57,7 @@ export class OneDriveSignal {
             await wait(delay);
             return link;
         };
-        await deltaStream(this.sessionPath() + '/ice', async (candidate) => {
+        await MY.deltaStream(this.sessionPath() + '/ice', async (candidate) => {
             if (!candidate.hasOwnProperty('file')) return;
             if (!candidate.name.endsWith('.ice')) return;
             const downloadUrl = candidate['@microsoft.graph.downloadUrl'];
@@ -87,9 +85,9 @@ export class OneDriveSignal {
         };
         
         const connections = 'special/approot:/PCs/' + pc + '/connections';
-        let info = await (await makeRequest(connections)).json();
+        let info = await (await MY.makeRequest(connections)).json();
 
-        await deltaStream(connections, async (candidate) => {
+        await MY.deltaStream(connections, async (candidate) => {
             if (!candidate.hasOwnProperty('file')) return;
             if (!candidate.name.endsWith('.sdp')) return;
             if (candidate.parentReference.id !== info.id) return;

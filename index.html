@@ -30,59 +30,136 @@
     </style>
 </head>
 
-<body style="text-align: center; background: #1e1e1e; color: #cedada;">
-<h1 class="no-video">Play in your browser</h1>
+<body class="sync-pending release">
+<h1 class="no-video"><span class="dev">DEV MODE -</span> Play in your browser</h1>
 
 <div class="video-container">
     <video autoplay id="stream"></video>
     <h1 id="game-status"></h1>
+    <div id="video-overlay">
+        <div class="footer">
+            <label>
+                video quality: <span id="video-quality"></span>
+                <br/>
+                <input type="range" min="1" max="16" id="video-bitrate" value="2">
+            </label>
+        </div>
+    </div>
 </div>
 
 <div class="content no-video">
-    <p style="display: inline-block;">
     <h2>Factorio</h2>
-    <button class="action" type="button" id="factorio-demo" disabled title="No nodes available">Run Demo</button>
-    <br/>
-    <br/>
-    <span class="mute">full game coming soon</span>
-    </p>
+    <button class="action" type="button" id="factorio-play">Play</button>
+    <div id="factorio-login">
+        <button class="action" type="button" id="factorio-demo" disabled>Run Demo</button>
+        <br/>
+        <form method="post" id="factorio-login-form">
+            <label for="uname" class="login-label"><b>Username</b></label>
+            <br/>
+            <input type="text" name="username" placeholder="Enter Username" id="uname" required>
+            <br/>
+            <label for="psw" class="login-label"><b>Password</b></label>
+            <br/>
+            <input type="password" name="password" placeholder="Enter Password" id="psw" required>
+            <br/>
+            <button class="action" type="button" id="factorio">Play</button>
+        </form>
+    </div>
 
-    <p style="display: inline-block;">
-    <h2>Minecraft</h2> coming soon
-    </p>
+    <h2>Minecraft</h2>
+    <div class="dev">
+    <button class="action" type="button" id="minecraft-play">Play</button>
+    <div id="minecraft-login" style="display: none;">
+        <button class="action" type="button" disabled id="minecraft-demo">Run Demo</button>
+        <button class="action" type="button" id="minecraft">Play</button>
+    </div>
+    </div>
+    Coming soon
 
-    <p style="display: inline-block;">
     <h2>&nbsp;</h2>
-    </p>
 
     <form style="display: inline-block;" action="https://forms.office.com/r/7LU5EzDLs8">
         <button class="action" type="submit" style="font-size: larger;">Join the waitlist</button>
     </form>
-
-    <p>&nbsp;</p>
-
-    <p style="display: inline-block;">
-    <h3><a href="/about">© Borg Queen, LLC 2023</a></h3>
+</div>
+<div class="footer">
+    <button id="loginButton" class="action dev" type="button" disabled style="font-size: larger;">LOGIN</button>
+    <progress id="space"></progress>
+    <h3 class="about"><a href="/about">© Borg Queen, LLC 2023</a></h3>
 </div>
 </body>
-
+<script src="https://alcdn.msauth.net/browser/2.38.2/js/msal-browser.min.js"
+        integrity="sha384-hhkHFODse2T75wPL7oJ0RZ+0CgRa74LNPhgx6wO6DMNEhU3/fSbTZdVzxsgyUelp"
+        crossorigin="anonymous"></script>
 <script type="module">
-    import {Home} from "./js/home.js";
+    import * as Minecraft from "./js/games/mc.js";
+
+    import {SYNC as OneDrive} from './js/onedrive.js';
+
+    import {login} from "./js/auth/ms.js"
+    import {devMode} from "./js/dev.js";
     import {Ephemeral} from "./js/ephemeral.js";
+    import {Home} from "./js/home.js";
+
+    const playFactorio = document.getElementById('factorio-play');
+    playFactorio.onclick = function (e) {
+        playFactorio.style.display = 'none';
+        document.getElementById('factorio-login').style.display = 'inline-block';
+    };
 
     const demo = document.getElementById('factorio-demo');
     demo.onclick = function () {
-        Home.launch();
+        Home.launch({
+            game: 'factorio?demo=true',
+        });
     };
-    
-    async function main(){
+    const full = document.getElementById('factorio');
+    full.onclick = function () {
+        Home.launch({
+            game: 'factorio',
+            user: document.getElementById('uname').value,
+            pwd: document.getElementById('psw').value
+        });
+    };
+
+    const playMinecraft = document.getElementById('minecraft-play');
+    playMinecraft.onclick = function (e) {
+        playMinecraft.style.display = 'none';
+        document.getElementById('minecraft-login').style.display = 'inline-block';
+    };
+
+    const fullMinecraft = document.getElementById('minecraft');
+    fullMinecraft.onclick = async function () {
+        const token = await login(Minecraft.clientID, Minecraft.scopes, true);
+        console.log('Minecraft logged in');
+        // await Home.launch({
+        //     game: 'minecraft',
+        // });
+    };
+
+    async function main() {
+        if (devMode()) {
+            document.body.classList.remove('release');
+            console.error('dev mode');
+        }
+        await Home.init();
         const nodes = await Ephemeral.getNodes();
         demo.disabled = nodes.length === 0;
         if (!demo.disabled)
             demo.title = null;
+        // full.disabled = nodes.length === 0;
+        // if (!full.disabled)
+        //     full.title = null;
     }
-    
+
     main();
+</script>
+
+<script>
+    function toggleDev() {
+        localStorage.setItem('dev-mode', 1-(+localStorage.getItem('dev-mode')));
+        window.location.reload();
+    }
 </script>
 
 </html>

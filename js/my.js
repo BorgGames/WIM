@@ -1,4 +1,4 @@
-import * as OneDrive from "./onedrive.js";
+import { MY as OneDrive } from "./onedrive.js";
 import { GameID } from "./gid.js";
 
 export class Games {

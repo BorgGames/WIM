@@ -71,10 +71,11 @@
         crossorigin="anonymous"></script>
     <script type="module">
         import * as util from './js/streaming-client/src/util.js';
-        import * as OneDrive from './js/onedrive.js';
 
         import { Client } from './js/streaming-client/src/client.js';
         import { ClientAPI } from './js/client-api.js';
+        import { configureRTC } from "./js/codecs.js";
+        import { MY as OneDrive } from "./js/onedrive.js";
         import { OneDriveRunningGames } from './js/drive-gamefs.js';
         import { OneDriveSignal } from './js/drive-link.js';
         import { OneDrivePersistence } from "./js/drive-persistence.js";
@@ -142,8 +143,12 @@
                         channel.send(sessionId);
                         await Session.waitForCommandRequest(channel);
                         break;
+                    case 'persistence':
+                        const persistence = new OneDrivePersistence(channel);
+                        break;
                     }
                 }, iceServers);
+                client.configureRTC = configureRTC;
                 //set up useful hotkeys that call client methods: destroy can also be used to cancel pending connection
                 const hotkeys = (event) => {
                     event.preventDefault();
@@ -167,6 +172,8 @@
                             app_ss_port: 7173,
                         })]);
                 } catch (e) {
+                    if (e.message === 'cancelled')
+                        client.destroy(0);
                     resolve(e);
                 }
             });
@@ -193,16 +200,32 @@
                 game = exe;
                 initiatedAt = performance.now();
                 status.innerText = 'looking for the node...';
-                const run = await Promise.all([
-                    runClient(pc, signalFactory, element, exe + '\\' + sessionId, timeout),
-                    launch
-                        ? OneDriveRunningGames.launch(pc, exe, sessionId, timeout)
-                        : OneDriveRunningGames.assertRunning(pc, exe, sessionId, timeout)
-                ]);
-                const code = run[0];
+                window.history.pushState('session', '', `#session=${sessionId}`);
+                window.addEventListener('popstate', cancel);
+                let cancelled = false;
 
-                if (code !== 0)
-                    alert(`Exit code: ${code}`);
+                function cancel() {
+                    timeout.reject('cancelled');
+                    cancelled = true;
+                }
+
+                try {
+                    const run = await Promise.all([
+                        runClient(pc, signalFactory, element, exe + '\\' + sessionId, timeout),
+                        launch
+                            ? OneDriveRunningGames.launch(pc, exe, sessionId, timeout)
+                            : OneDriveRunningGames.assertRunning(pc, exe, sessionId, timeout)
+                    ]);
+                    const code = run[0];
+
+                    if (!cancelled)
+                        window.history.back();
+
+                    if (code !== 0 && code !== 'cancelled' && (!(code instanceof Error && code.message === 'cancelled')))
+                        alert(`Exit code: ${code}`);
+                } finally {
+                    window.removeEventListener('popstate', cancel);
+                }
             } catch (e) {
                 console.error(e);
                 alert(e);
@@ -257,7 +280,7 @@
             Launcher.launch = launch;
             Launcher.initialize(My.Games.games);
 
-            await OneDrive.login();
+            await OneDrive.login(true);
 
             await OneDrive.ensureBorgTag();
 

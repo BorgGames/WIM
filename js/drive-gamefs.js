@@ -1,5 +1,5 @@
-import { deltaStream, makeRequest } from "./onedrive.js";
-import { wait } from "./streaming-client/src/util.js";
+import {MY} from "./onedrive.js";
+import {wait} from "./streaming-client/src/util.js";
 
 export class OneDriveRunningGames {
     static async launch(pc, gameID, sessionID, timeout) {
@@ -7,7 +7,7 @@ export class OneDriveRunningGames {
         timeout.catch(() => cancelled = true);
         const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
         const sessionPath = gamePath + '/' + sessionID;
-        const response = await makeRequest(sessionPath + '.game:/content', {
+        const response = await MY.makeRequest(sessionPath + '.game:/content', {
             method: 'PUT',
             headers: { 'Content-Type': 'text/plain' },
             body: '' + gameID
@@ -24,7 +24,7 @@ export class OneDriveRunningGames {
         };
 
         const responsePath = sessionPath + '.launch';
-        await deltaStream(gamePath, async (candidate) => {
+        await MY.deltaStream(gamePath, async (candidate) => {
             if (!candidate.hasOwnProperty('file')) return;
             if (candidate.name !== sessionID + '.launch') return;
             const launchResponse = await fetch(candidate['@microsoft.graph.downloadUrl']);
@@ -62,7 +62,7 @@ export class OneDriveRunningGames {
         let cancelled = false;
         timeout.catch(() => cancelled = true);
         const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
-        const response = await makeRequest(gamePath
+        const response = await MY.makeRequest(gamePath
             + ':/children?filter=file ne null and (endswith(name,\'.game\') or endswith(name, \'.jpg\'))');
 
         if (response.status === 404)
@@ -92,7 +92,7 @@ export class OneDriveRunningGames {
     static async stop(pc, gameID, sessionID) {
         const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
         const sessionPath = gamePath + '/' + sessionID;
-        const response = await makeRequest(sessionPath + '.game', {
+        const response = await MY.makeRequest(sessionPath + '.game', {
             method: 'DELETE',
         });
 
@@ -106,7 +106,7 @@ export class OneDriveRunningGames {
         let cancelled = false;
         timeout.catch(() => cancelled = true);
         while (!cancelled) {
-            const response = await makeRequest(gamePath
+            const response = await MY.makeRequest(gamePath
                 + ':/children?filter=file ne null and endswith(name,\'.exit\')');
 
             if (!response.ok)

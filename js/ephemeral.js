@@ -1,6 +1,7 @@
 ﻿import { wait } from "./streaming-client/src/util.js";
+import { devMode } from "./dev.js";
 
-const API = 'https://borg-ephemeral.azurewebsites.net/ephemeral/';
+const API = devMode() ? 'https://localhost:7173/ephemeral/' : "https://borg-ephemeral.azurewebsites.net/ephemeral/";
 
 export class Ephemeral {
     async connect(cfg, sessionId, answer, onCandidate) {
@@ -16,9 +17,12 @@ export class Ephemeral {
     }
 
     async submitAnswer() {
+        const headers = {'Content-Type': 'text/plain'};
+        if (this.secret)
+            headers.Secret = this.secret;
         const response = await fetch(this.endpoint + this.sessionId + '/answer', {
             method: 'PUT',
-            headers: {'Content-Type': 'text/plain'},
+            headers: headers,
             body: JSON.stringify(this.answer)
         });
 
@@ -27,19 +31,25 @@ export class Ephemeral {
     }
 
     async sendCandidate(candidate) {
+        const headers = {'Content-Type': 'text/plain'};
+        if (this.secret)
+            headers.Secret = this.secret;
         const response = await fetch(this.endpoint + this.sessionId + '/answerIce', {
             method: 'PUT',
-            headers: {'Content-Type': 'text/plain'},
+            headers: headers,
             body: candidate
         });
 
         if (!response.ok)
             throw new Error('Failed to submit ICE candidate');
     }
-    
-    static async getNodes(endpoint) {
+
+    static async getNodes(endpoint, secret) {
         endpoint = endpoint || API;
-        const response = await fetch(endpoint + 'offers');
+        const options = {};
+        if (secret)
+            options.headers = {'Secret': secret};
+        const response = await fetch(endpoint + 'offers', options);
         if (!response.ok)
             throw new Error('Failed to fetch nodes');
 
@@ -48,8 +58,11 @@ export class Ephemeral {
 
     async fetchCandidates() {
         const seen = new Set();
+        const options = {};
+        if (this.secret)
+            options.headers = {'Secret': this.secret};
         while (this.stopCode === 0) {
-            const response = await fetch(this.endpoint + this.sessionId);
+            const response = await fetch(this.endpoint + this.sessionId, options);
             if (!response.ok)
                 throw new Error('Failed to fetch ICE candidates');
 
@@ -75,8 +88,10 @@ export class Ephemeral {
         return 41;
     }
 
-    constructor(endpoint) {
+    constructor(endpoint, secret) {
         this.endpoint = endpoint || API;
+        if (secret)
+            this.secret = secret;
         this.stopCode = 0;
     }
 
