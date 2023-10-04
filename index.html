@@ -146,10 +146,10 @@
         const nodes = await Ephemeral.getNodes();
         demo.disabled = nodes.length === 0;
         if (!demo.disabled)
-            demo.title = null;
+            demo.title = '';
         // full.disabled = nodes.length === 0;
         // if (!full.disabled)
-        //     full.title = null;
+        //     full.title = '';
     }
 
     main();
