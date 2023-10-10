@@ -150,7 +150,7 @@
 
     const fullMinecraft = document.getElementById('minecraft');
     fullMinecraft.onclick = async function () {
-        const token = await login(Minecraft.clientID, Minecraft.scopes, true);
+        const token = await login(Minecraft.auth, Minecraft.scopes, true);
         console.log('Minecraft logged in');
         // await Home.launch({
         //     game: 'minecraft',

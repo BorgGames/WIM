@@ -1,18 +1,20 @@
-﻿export async function login(clientID, scopes, loud, partial) {
-    partial = partial || {};
-    loud = loud || false;
+﻿export function makeApp(clientID) {
     const msalConfig = {
         auth: {
             clientId: clientID,
+            authority: 'https://login.microsoftonline.com/consumers',
         },
         cache: {
             cacheLocation: 'localStorage'
         }
     };
-
+    
+    return new msal.PublicClientApplication(msalConfig);
+}
+export async function login(clientApp, scopes, loud, partial) {
+    partial = partial || {};
+    loud = loud || false;
     const loginRequest = { scopes };
-
-    const clientApp = new msal.PublicClientApplication(msalConfig);
 
     const redirectResult = await clientApp.handleRedirectPromise();
     console.debug('redirectResult', redirectResult);
@@ -54,11 +56,13 @@
             console.log('got ' + newAccounts.length + ' accounts');
             clientApp.setActiveAccount(newAccounts[0]);
         }
+    } else {
+        console.debug('using existing account');
     }
 
     partial.account = clientApp.getActiveAccount();
 
-    const cooldownKey = 'ms-login-cooldown-' + clientID;
+    const cooldownKey = 'ms-login-cooldown-' + clientApp.config.auth.clientId;
 
     let tokenResponse;
     try {

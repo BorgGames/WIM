@@ -1,17 +1,25 @@
 import * as ms from './auth/ms.js';
 
 const driveUrl = 'https://graph.microsoft.com/v1.0/me/drive/';
-
+const scopes = ['user.read', 'files.readwrite.appfolder'];
 export class OneDrive {
     clientID;
+    auth;
     accessToken = null;
 
     constructor(clientID) {
         this.clientID = clientID;
+        this.auth = ms.makeApp(clientID);
     }
 
     async makeRequest(url, options) {
         if (!this.accessToken) throw new Error('Not logged in');
+        
+        try {
+            this.accessToken = (await this.auth.acquireTokenSilent({ scopes })).accessToken;
+        } catch (e) {
+            console.warn('Failed to update token silently');
+        }
 
         if (!options) options = {};
         options.headers = options.headers || {};
@@ -50,7 +58,7 @@ export class OneDrive {
 
     async login(loud) {
         const partial = {};
-        const token = await ms.login(this.clientID, ['user.read', 'files.readwrite.appfolder'], loud, partial);
+        const token = await ms.login(this.auth, scopes, loud, partial);
         this.account = partial.account;
         if (!token) return false;
         this.accessToken = token;
