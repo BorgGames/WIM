@@ -26,6 +26,7 @@ export class OneDrive {
         options.headers['Authorization'] = 'Bearer ' + this.accessToken;
         if (!url.startsWith('https://'))
             url = driveUrl + url;
+        let triedLogin = false;
         while (true) {
             let result = await fetch(url, options);
             if (result.ok) return result;
@@ -34,6 +35,9 @@ export class OneDrive {
                     console.warn('Retry after', result.headers.get('Retry-After'));
                     continue;
                 case 401:
+                    if (triedLogin)
+                        return result;
+                    triedLogin = true;
                     await this.login();
                     continue;
                 default:
