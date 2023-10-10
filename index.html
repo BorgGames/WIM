@@ -51,28 +51,34 @@
     <h2>Factorio</h2>
     <button class="action" type="button" id="factorio-play">Play</button>
     <div id="factorio-login">
-        <button class="action" type="button" id="factorio-demo" disabled>Run Demo</button>
-        <br/>
         <form method="post" id="factorio-login-form">
-            <label for="uname" class="login-label"><b>Username</b></label>
-            <br/>
-            <input type="text" name="username" placeholder="Enter Username" id="uname" required>
-            <br/>
-            <label for="psw" class="login-label"><b>Password</b></label>
-            <br/>
-            <input type="password" name="password" placeholder="Enter Password" id="psw" required>
-            <br/>
-            <button class="action" type="button" id="factorio">Play</button>
+            <div id="factorio-credentials">
+                To play full game login with your Factorio account:
+                <p>
+                    <label for="uname" class="login-label"><b>Username</b></label>
+                    <br/>
+                    <input type="text" name="username" placeholder="Enter Username"
+                           id="uname" required autocomplete="username">
+                    <br/>
+                    <label for="psw" class="login-label"><b>Password</b></label>
+                    <br/>
+                    <input type="password" name="password" placeholder="Enter Password"
+                           id="psw" required autocomplete="current-password">
+                </p>
+            </div>
+            <button class="action" type="button" id="factorio">Play Full Game</button>
         </form>
+        <p></p>
+        <button class="action" type="button" id="factorio-demo" disabled>Run Demo</button>
     </div>
 
     <h2>Minecraft</h2>
     <div class="dev">
-    <button class="action" type="button" id="minecraft-play">Play</button>
-    <div id="minecraft-login" style="display: none;">
-        <button class="action" type="button" disabled id="minecraft-demo">Run Demo</button>
-        <button class="action" type="button" id="minecraft">Play</button>
-    </div>
+        <button class="action" type="button" id="minecraft-play">Play</button>
+        <div id="minecraft-login" style="display: none;">
+            <button class="action" type="button" disabled id="minecraft-demo">Run Demo</button>
+            <button class="action" type="button" id="minecraft">Play</button>
+        </div>
     </div>
     Coming soon
 
@@ -82,6 +88,24 @@
         <button class="action" type="submit" style="font-size: larger;">Join the waitlist</button>
     </form>
 </div>
+
+<div id="login-dialog">
+    <div class="solid">
+        <h1>Choose where to save game progress</h1>
+        <h2>
+            <label>
+                Microsoft OneDrive
+                <br/>
+                <br/>
+                <button id="onedriveLogin" class="action" type="button"
+                        title="Login with OneDrive to save game progress">Login</button>
+            </label>
+            
+            <button id="cancelLogin" class="action" type="button">Cancel</button>
+        </h2>
+    </div>
+</div>
+
 <div class="footer">
     <button id="loginButton" class="action dev" type="button" disabled style="font-size: larger;">LOGIN</button>
     <progress id="space"></progress>
@@ -91,21 +115,17 @@
 <script src="https://alcdn.msauth.net/browser/2.38.2/js/msal-browser.min.js"
         integrity="sha384-hhkHFODse2T75wPL7oJ0RZ+0CgRa74LNPhgx6wO6DMNEhU3/fSbTZdVzxsgyUelp"
         crossorigin="anonymous"></script>
+<script src="https://webrtc.github.io/adapter/adapter-8.2.2.js"
+        integrity="sha384-crh+K62xOkgTbJRVKt5nsdUKKjNKbK6wJSTOEpPSatLbgHhuycaKkpdnFD9Tty+v"
+        crossorigin="anonymous"></script>
 <script type="module">
     import * as Minecraft from "./js/games/mc.js";
-
-    import {SYNC as OneDrive} from './js/onedrive.js';
+    import * as Factorio from "./js/games/factorio.js";
 
     import {login} from "./js/auth/ms.js"
     import {devMode} from "./js/dev.js";
     import {Ephemeral} from "./js/ephemeral.js";
     import {Home} from "./js/home.js";
-
-    const playFactorio = document.getElementById('factorio-play');
-    playFactorio.onclick = function (e) {
-        playFactorio.style.display = 'none';
-        document.getElementById('factorio-login').style.display = 'inline-block';
-    };
 
     const demo = document.getElementById('factorio-demo');
     demo.onclick = function () {
@@ -157,7 +177,7 @@
 
 <script>
     function toggleDev() {
-        localStorage.setItem('dev-mode', 1-(+localStorage.getItem('dev-mode')));
+        localStorage.setItem('dev-mode', 1 - (+localStorage.getItem('dev-mode')));
         window.location.reload();
     }
 </script>

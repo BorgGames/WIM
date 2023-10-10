@@ -49,7 +49,9 @@ export class OneDrive {
     }
 
     async login(loud) {
-        const token = await ms.login(this.clientID, ['user.read', 'files.readwrite.appfolder'], loud);
+        const partial = {};
+        const token = await ms.login(this.clientID, ['user.read', 'files.readwrite.appfolder'], loud, partial);
+        this.account = partial.account;
         if (!token) return false;
         this.accessToken = token;
         console.log('Logged in');

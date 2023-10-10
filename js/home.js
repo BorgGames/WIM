@@ -43,6 +43,8 @@ export class Home {
             Home.login(true);
         });
         loginButton.disabled = await Home.login();
+        if (!loginButton.disabled && SYNC.account)
+            loginButton.disabled = await Home.login(true);
     }
 
     static async login(loud) {
@@ -121,16 +123,12 @@ export class Home {
                             await Session.waitForCommandRequest(channel);
                             const stats = await getNetworkStatistics(channel);
                             await Session.waitForCommandRequest(channel);
-                            if (devMode()) {
-                                killOthers(client);
-                                const launch = {
-                                    Launch: "borg:games/" + config.game,
-                                    PersistenceRoot: SYNC.isLoggedIn() ? persistenceID : undefined,
-                                };
-                                channel.send("\x15" + JSON.stringify(launch));
-                            } else {
-                                channel.send(Msg.launch());
-                            }
+                            killOthers(client);
+                            const launch = {
+                                Launch: "borg:games/" + config.game,
+                                PersistenceRoot: SYNC.isLoggedIn() ? persistenceID : undefined,
+                            };
+                            channel.send("\x15" + JSON.stringify(launch));
                             await Session.waitForCommandRequest(channel);
                             controlChannel = channel;
                             break;
@@ -182,19 +180,24 @@ export class Home {
     }
 
     static async launch(config) {
-        document.body.classList.add('video');
-
         const timeout = util.timeout(1000 /*s*/ * 60 /*m*/ * 3);
 
         try {
             if (!config.sessionId)
                 config.sessionId = crypto.randomUUID();
+            
+            if (config.game === 'factorio' && !SYNC.isLoggedIn()) {
+                if (!await showLoginDialog())
+                    return;
+            }
+
+            document.body.classList.add('video');
 
             let persistenceID = undefined;
             if (SYNC.isLoggedIn())
                 persistenceID = await ensureSyncFolders();
 
-            if (config.user) {
+            if (config.game === 'factorio' && config.user) {
                 if (await Factorio.loginRequired())
                     await Factorio.login(config.user, config.pwd);
             }
@@ -219,6 +222,29 @@ export class Home {
             video.load();
         }
     }
+}
+
+async function showLoginDialog() {
+    const dialog = document.getElementById('login-dialog');
+    dialog.style.display = 'flex';
+    const promise = new Promise(async (resolve) => {
+        const doLogin = async () => {
+            try {
+                resolve(await Home.login(true));
+            } catch (e) {
+                resolve(false);
+            }
+        };
+        // if (SYNC.account)
+        //     await doLogin();
+        document.getElementById('onedriveLogin').onclick = doLogin;
+        document.getElementById('cancelLogin').onclick = () => resolve(false);
+    });
+try {
+    await promise;
+} finally {
+    dialog.style.display = 'none';
+}
 }
 
 async function ensureSyncFolders() {

@@ -1,4 +1,5 @@
-﻿export async function login(clientID, scopes, loud) {
+﻿export async function login(clientID, scopes, loud, partial) {
+    partial = partial || {};
     loud = loud || false;
     const msalConfig = {
         auth: {
@@ -54,6 +55,8 @@
             clientApp.setActiveAccount(newAccounts[0]);
         }
     }
+
+    partial.account = clientApp.getActiveAccount();
 
     const cooldownKey = 'ms-login-cooldown-' + clientID;
 

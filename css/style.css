@@ -236,6 +236,38 @@ body.video .video-container {
     padding: 0;
 }
 
+#login-dialog {
+    display: none;
+    background: #1e1e1e8e;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    text-align: center;
+    vertical-align: middle;
+}
+
+#login-dialog .solid {
+    background: black;
+    padding: 1em 4em;
+    margin: auto;
+}
+
+#login-dialog h1 {
+    padding-bottom: 0.8em;
+    margin-top: 0;
+}
+
+#login-dialog h2 {
+    margin-bottom: 0.3em;
+}
+
+#login-dialog button {
+    font-size: large;
+    margin: 0 0.3em;
+}
+
 body.sync #loginButton {
     display: none;
 }
@@ -256,20 +288,21 @@ body.sync #space {
     display: inline-block;
 }
 
+#factorio {
+    font-size: larger;
+}
+
 #factorio-login {
     display: none;
+    margin-bottom: 1em;
 }
 
-.release #factorio-login {
+#factorio-credentials {
+    display: none;
+}
+
+.needs-login #factorio-credentials {
     display: block;
-}
-
-.release #factorio-login-form {
-    display: none;
-}
-
-.release #factorio-play {
-    display: none;
 }
 
 .release .dev {
