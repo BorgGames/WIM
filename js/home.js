@@ -42,9 +42,11 @@ export class Home {
         loginButton.addEventListener('click', () => {
             Home.login(true);
         });
-        loginButton.disabled = await Home.login();
-        if (!loginButton.disabled && SYNC.account)
-            loginButton.disabled = await Home.login(true);
+        let loggedIn = await Home.login();
+        if (!loggedIn && SYNC.account)
+            loggedIn = await Home.login(true);
+
+        loginButton.disabled = loggedIn;
     }
 
     static async login(loud) {
@@ -56,7 +58,7 @@ export class Home {
         }
         if (token)
             await Home.showStorage();
-        else
+        else if (!SYNC.account || loud)
             Home.showLogin();
 
         return !!token;
