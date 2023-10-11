@@ -1,6 +1,7 @@
 ﻿import * as util from "./streaming-client/src/util.js";
 import * as Msg from './streaming-client/src/msg.js';
 import * as Factorio from './games/factorio.js';
+import * as Minecraft from "./games/mc.js";
 
 import {Client} from './streaming-client/src/client.js';
 import {ClientAPI} from "./client-api.js";
@@ -18,6 +19,8 @@ const video = document.getElementById('stream');
 const videoBitrate = document.getElementById('video-bitrate');
 
 let controlChannel = null;
+
+const mcLoginDialog = document.getElementById('mc-login-dialog');
 
 export class Home {
     static async init() {
@@ -187,18 +190,37 @@ export class Home {
         try {
             if (!config.sessionId)
                 config.sessionId = crypto.randomUUID();
-            
-            if (config.game === 'factorio' && !SYNC.isLoggedIn()) {
+
+            if ((config.game === 'factorio' || config.game === 'minecraft') && !SYNC.isLoggedIn()) {
                 if (!await showLoginDialog())
                     return;
             }
+
+            const gameName = config.game === 'minecraft' ? 'Minecraft': 'Factorio';
 
             document.body.classList.add('video');
 
             let persistenceID = undefined;
             if (SYNC.isLoggedIn())
-                persistenceID = await ensureSyncFolders();
+                persistenceID = await ensureSyncFolders(gameName);
 
+            switch (config.game) {
+                case 'factorio':
+                    if (config.user && await Factorio.loginRequired())
+                        await Factorio.login(config.user, config.pwd);
+                    break;
+                case 'minecraft':
+                    if (await Minecraft.loginRequired()) {
+                        const login = await Minecraft.beginLogin();
+                        showMinecraftLogin(login);
+                        try {
+                            await Minecraft.completeLogin(login.code);
+                        } finally {
+                            mcLoginDialog.style.display = 'none';
+                        }
+                    }
+                    break;
+            }
             if (config.game === 'factorio' && config.user) {
                 if (await Factorio.loginRequired())
                     await Factorio.login(config.user, config.pwd);
@@ -242,15 +264,21 @@ async function showLoginDialog() {
         document.getElementById('onedriveLogin').onclick = doLogin;
         document.getElementById('cancelLogin').onclick = () => resolve(false);
     });
-try {
-    await promise;
-} finally {
-    dialog.style.display = 'none';
-}
+    try {
+        await promise;
+    } finally {
+        dialog.style.display = 'none';
+    }
 }
 
-async function ensureSyncFolders() {
-    const url = 'special/approot:/' + Factorio.LOCAL_DATA;
+function showMinecraftLogin(login) {
+    document.getElementById('mc-code').innerText = login.code;
+    document.getElementById('mc-login-link').href = login.location;
+    mcLoginDialog.style.display = 'flex';
+}
+
+async function ensureSyncFolders(game) {
+    const url = 'special/approot:/Games/' + game;
     let response = await SYNC.makeRequest(url, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},

@@ -1,5 +1,69 @@
-﻿import {makeApp} from "../auth/ms.js";
+﻿import {SYNC} from "../onedrive.js";
 
-const clientID = '4c1b168d-3889-494d-a1ea-1a95c3ecda51';
-export const auth = makeApp(clientID);
-export const scopes = ['openid', 'profile', 'offline_access', 'XboxLive.signin'];
+const AUTH_ENDPOINT = 'https://borg-ephemeral.azurewebsites.net/cors/minecraft/';
+export const LOCAL_DATA = "Games/Minecraft";
+const LOCAL_DATA_URL = `special/approot:/${LOCAL_DATA}`;
+const CREDS_URL = LOCAL_DATA_URL + "/cml-creds.json";
+
+export async function beginLogin() {
+    const response = await fetch(AUTH_ENDPOINT + 'login', {method: 'POST'});
+    const code = await response.text();
+    const location = response.headers.get('Location');
+    return {code, location};
+}
+
+export async function completeLogin(code) {
+    const completionUrl = AUTH_ENDPOINT + 'await/' + encodeURIComponent(code);
+    const completion = await fetch(completionUrl, {method: 'POST'});
+    if (!completion.ok)
+        throw new Error(`HTTP ${completion.status}: ${completion.statusText}`);
+    const session = await completion.json();
+    const save = await SYNC.makeRequest(CREDS_URL + ':/content', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(session),
+    });
+    if (!save.ok)
+        throw new Error(`Failed to save MC account: HTTP ${save.status}: ${save.statusText}`);
+
+    console.log('Minecraft logged in');
+}
+
+export async function loginRequired() {
+    try {
+        var creds = await getCreds();
+        if (creds === null)
+            return true;
+    } catch (e) {
+        console.error('MC loginRequired', e);
+        return true;
+    }
+
+    try {
+        const profile = await getProfile(creds.accessToken);
+        console.log('MC profile', profile);
+        return false;
+    } catch (e) {
+        console.error('MC loginRequired', e);
+        return true;
+    }
+}
+
+async function getProfile(accessToken) {
+    const profileUrl = AUTH_ENDPOINT + 'check/' + encodeURIComponent(accessToken);
+    const profile = await fetch(profileUrl, {method: 'POST'});
+    return await profile.json();
+}
+
+async function getCreds() {
+    const response = await SYNC.download(CREDS_URL);
+    if (response === null)
+        return null;
+
+    try {
+        return await response.json();
+    } catch (e) {
+        console.error('mc-creds', e);
+        return null;
+    }
+}

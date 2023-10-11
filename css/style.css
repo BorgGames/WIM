@@ -236,7 +236,7 @@ body.video .video-container {
     padding: 0;
 }
 
-#login-dialog {
+.modal-dialog {
     display: none;
     background: #1e1e1e8e;
     position: fixed;
@@ -248,18 +248,18 @@ body.video .video-container {
     vertical-align: middle;
 }
 
-#login-dialog .solid {
+.modal-dialog .solid {
     background: black;
     padding: 1em 4em;
     margin: auto;
 }
 
-#login-dialog h1 {
+.modal-dialog h1 {
     padding-bottom: 0.8em;
     margin-top: 0;
 }
 
-#login-dialog h2 {
+.modal-dialog h2 {
     margin-bottom: 0.3em;
 }
 

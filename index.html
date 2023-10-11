@@ -89,7 +89,7 @@
     </form>
 </div>
 
-<div id="login-dialog">
+<div id="login-dialog" class="modal-dialog">
     <div class="solid">
         <h1>Choose where to save game progress</h1>
         <h2>
@@ -106,6 +106,15 @@
     </div>
 </div>
 
+<div id="mc-login-dialog" class="modal-dialog">
+    <div class="solid">
+        <h1>Sign in with your Microsoft account to play Minecraft</h1>
+        <h2>Copy the code and enter it on the login page</h2>
+        <h3 class="copy" id="mc-code"></h3>
+        <a id="mc-login-link" target="_blank">Open the login page</a>
+    </div>
+</div>
+
 <div class="footer">
     <button id="loginButton" class="action dev" type="button" disabled style="font-size: larger;">LOGIN</button>
     <progress id="space"></progress>
@@ -119,10 +128,6 @@
         integrity="sha384-crh+K62xOkgTbJRVKt5nsdUKKjNKbK6wJSTOEpPSatLbgHhuycaKkpdnFD9Tty+v"
         crossorigin="anonymous"></script>
 <script type="module">
-    import * as Minecraft from "./js/games/mc.js";
-    import * as Factorio from "./js/games/factorio.js";
-
-    import {login} from "./js/auth/ms.js"
     import {devMode} from "./js/dev.js";
     import {Ephemeral} from "./js/ephemeral.js";
     import {Home} from "./js/home.js";
@@ -149,12 +154,8 @@
     };
 
     const fullMinecraft = document.getElementById('minecraft');
-    fullMinecraft.onclick = async function () {
-        const token = await login(Minecraft.auth, Minecraft.scopes, true);
-        console.log('Minecraft logged in');
-        // await Home.launch({
-        //     game: 'minecraft',
-        // });
+    fullMinecraft.onclick = function () {
+        Home.launch({game: 'minecraft'});
     };
 
     async function main() {
