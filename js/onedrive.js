@@ -1,7 +1,9 @@
 import * as ms from './auth/ms.js';
+import {wait} from "./streaming-client/src/util.js";
 
 const driveUrl = 'https://graph.microsoft.com/v1.0/me/drive/';
 const scopes = ['user.read', 'files.readwrite.appfolder'];
+
 export class OneDrive {
     clientID;
     auth;
@@ -31,8 +33,11 @@ export class OneDrive {
             let result = await fetch(url, options);
             if (result.ok) return result;
             switch (result.status) {
-                case 503:
-                    console.warn('Retry after', result.headers.get('Retry-After'));
+                case 503: case 429:
+                    const defaultDelayS = Math.random() * 0.3 + 0.3;
+                    const retryS = parseInt(result.headers.get('Retry-After')) || defaultDelayS;
+                    console.warn('Retry after, sec: ', retryS);
+                    await wait(retryS * 1000);
                     continue;
                 case 401:
                     if (triedLogin)
