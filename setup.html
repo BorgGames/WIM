@@ -44,7 +44,18 @@
     <script type="module"
             src="https://get.microsoft.com/badge/ms-store-badge.bundled.js"
             crossorigin="anonymous"></script>
-    <ms-store-badge productid="9NTDRRR4814S"></ms-store-badge>
+    <ms-store-badge productid="9NTDRRR4814S" id="get-from-store"></ms-store-badge>
+    <a href="ms-windows-store://pdp/?ProductId=9NTDRRR4814S" id="get-from-store-plain" style="display: none">
+        <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Download Borg node" />
+    </a>
+    <script>
+        setTimeout(() => {
+            const get = document.getElementById('get-from-store');
+            if (get.children.length === 0 && !get.shadowRoot) {
+                document.getElementById('get-from-store-plain').style.display = 'inline-block';
+            }
+        }, 3000);
+    </script>
     <noscript><a href="ms-windows-store://pdp/?productid=9NTDRRR4814S">Get from Microsoft Store</a></noscript>
 
     <h2>Configure</h2>
