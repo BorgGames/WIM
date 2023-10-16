@@ -18,19 +18,9 @@
 
     <title>Borg Games - Play in your browser</title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        button.action {
-            text-transform: uppercase;
-            padding: 0.5vh 1vh;
-        }
-
-        a[href] {
-            color: white;
-        }
-    </style>
 </head>
 
-<body class="sync-pending release">
+<body class="sync-pending release no-nodes">
 <h1 class="no-video"><span class="dev">DEV MODE -</span> Play in your browser</h1>
 
 <div class="video-container">
@@ -51,6 +41,14 @@
     <h2>Factorio</h2>
     <button class="action" type="button" id="factorio-play">Play</button>
     <div id="factorio-login">
+        <div class="no-nodes-message">
+            <h2>No nodes available - ask a friend to run one!</h2>
+            <p>
+                Know a friend with a gaming PC? Ask them to run a node so you could play!
+            </p>
+            <button class="action invite" type="button">Invite</button>
+            <button class="action" type="button" onclick="window.location.href = '/setup'">Setup own node</button>
+        </div>
         <form method="post" id="factorio-login-form">
             <div id="factorio-credentials">
                 To play full game login with your Factorio account:
@@ -73,13 +71,7 @@
     </div>
 
     <h2>Minecraft</h2>
-    <div class="dev">
-        <button class="action" type="button" id="minecraft-play">Play</button>
-        <div id="minecraft-login" style="display: none;">
-            <button class="action" type="button" disabled id="minecraft-demo">Run Demo</button>
-            <button class="action" type="button" id="minecraft">Play</button>
-        </div>
-    </div>
+    <button class="action dev" type="button" id="minecraft" title="Play Minecraft">Play</button>
     Coming soon
 
     <h2>&nbsp;</h2>
@@ -147,16 +139,8 @@
         });
     };
 
-    const playMinecraft = document.getElementById('minecraft-play');
-    playMinecraft.onclick = function (e) {
-        playMinecraft.style.display = 'none';
-        document.getElementById('minecraft-login').style.display = 'inline-block';
-    };
-
     const fullMinecraft = document.getElementById('minecraft');
-    fullMinecraft.onclick = function () {
-        Home.launch({game: 'minecraft'});
-    };
+    fullMinecraft.onclick = () => Home.launch({game: 'minecraft'});
 
     async function main() {
         if (devMode()) {
@@ -168,6 +152,8 @@
         demo.disabled = nodes.length === 0;
         if (!demo.disabled)
             demo.title = '';
+        if (nodes.length > 0)
+            document.body.classList.remove('no-nodes');
         // full.disabled = nodes.length === 0;
         // if (!full.disabled)
         //     full.title = '';

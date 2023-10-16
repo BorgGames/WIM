@@ -29,11 +29,20 @@ h1 {
     text-align: center;
 }
 
+a[href] {
+    color: white;
+}
+
 .content {
     grid-area: main;
     min-height: 0;
     overflow-y: auto;
     text-align: center;
+}
+
+.setup .content {
+    text-align: left;
+    padding: 1em;
 }
 
 .footer {
@@ -299,6 +308,27 @@ body.sync #space {
 
 #factorio-credentials {
     display: none;
+}
+
+.no-nodes-message {
+    margin-bottom: 1em;
+    display: none;
+}
+
+.no-nodes .no-nodes-message {
+    display: block;
+}
+
+button.action {
+    text-transform: uppercase;
+    padding: 0.5vh 1vh;
+}
+
+.no-nodes-message button.action {
+    font-size: large;
+    min-width: 10em;
+    padding: 0.3em 1em;
+    margin: 0.3em 1em;
 }
 
 .needs-login #factorio-credentials {

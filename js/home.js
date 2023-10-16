@@ -21,10 +21,38 @@ const videoBitrate = document.getElementById('video-bitrate');
 let controlChannel = null;
 
 const mcLoginDialog = document.getElementById('mc-login-dialog');
+const inviteButtons = document.querySelectorAll('button.invite');
+const inviteText = 'Join Borg P2P Cloud Gaming network to play remotely or rent your PC out.' +
+    ' You will need to install the Borg software on a gaming PC under Windows Pro.' +
+    ' You can download the Borg node software from the Microsoft Store.';
+const invite = {
+    title: 'Setup Borg node',
+    text: inviteText,
+    uri: 'https://borg.games/setup',
+};
+const emailInvite = "mailto:"
+    + "?subject=" + encodeURIComponent('Invite: Join Borg P2P Cloud Gaming')
+    + "&body=" + encodeURIComponent(inviteText
+        + '\n\nDownload Borg app from Microsoft Store: https://www.microsoft.com/store/apps/9NTDRRR4814S'
+        + '\n\nSetup instructions: https://borg.games/setup'
+    );
 
 export class Home {
     static async init() {
+        let loginPromise = Home.login();
         videoBitrate.addEventListener('input', changeBitrate);
+
+        for (const button of inviteButtons) {
+            button.addEventListener('click', () => {
+                if (navigator.canShare && navigator.canShare(invite)) {
+                    navigator.share(invite)
+                        .then(() => console.log('Share was successful.'))
+                        .catch((error) => console.log('Sharing failed', error));
+                } else {
+                    window.open(emailInvite);
+                }
+            })
+        }
 
         function changeBitrate() {
             const short = videoBitrate.value < 4 ? "low"
@@ -45,7 +73,7 @@ export class Home {
         loginButton.addEventListener('click', () => {
             Home.login(true);
         });
-        let loggedIn = await Home.login();
+        let loggedIn = await loginPromise;
         if (!loggedIn && SYNC.account)
             loggedIn = await Home.login(true);
 
