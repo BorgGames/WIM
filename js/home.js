@@ -160,9 +160,17 @@ export class Home {
                     switch (name) {
                         case 'control':
                             await Session.waitForCommandRequest(channel);
+                            if (client.exited())
+                                break;
                             const stats = await getNetworkStatistics(channel);
+                            if (client.exited())
+                                break;
                             await Session.waitForCommandRequest(channel);
+                            if (client.exited())
+                                break;
                             killOthers(client);
+                            if (client.exited())
+                                break;
                             const launch = {
                                 Launch: "borg:games/" + config.game,
                                 PersistenceRoot: SYNC.isLoggedIn() ? persistenceID : undefined,
