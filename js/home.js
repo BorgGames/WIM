@@ -21,6 +21,7 @@ const videoBitrate = document.getElementById('video-bitrate');
 let controlChannel = null;
 
 const resume = document.getElementById('video-resume');
+resume.onclick = () => video.play();
 
 const mcLoginDialog = document.getElementById('mc-login-dialog');
 const inviteButtons = document.querySelectorAll('button.invite');
@@ -153,7 +154,10 @@ export class Home {
                             break;
                         case 'status':
                             status.innerText = event.msg;
-                            resume.style.display = event.msg === 'video suspend' ? 'inline-block' : 'none';
+                            const resumeRequired = event.msg === 'video suspend';
+                            resume.style.display = resumeRequired ? 'inline-block' : 'none';
+                            if (resumeRequired)
+                                video.autoplay = false;
                             break;
                     }
                 }, async (name, channel) => {
