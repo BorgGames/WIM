@@ -157,6 +157,12 @@ body.video .no-video {
     display: none;
 }
 
+#video-resume {
+    position: absolute;
+    left: calc(50% - 3em);
+    top: calc(50% + 3em);
+}
+
 #launcher::after {
     content: "";
     display: table;

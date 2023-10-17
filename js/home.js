@@ -20,6 +20,8 @@ const videoBitrate = document.getElementById('video-bitrate');
 
 let controlChannel = null;
 
+const resume = document.getElementById('video-resume');
+
 const mcLoginDialog = document.getElementById('mc-login-dialog');
 const inviteButtons = document.querySelectorAll('button.invite');
 const inviteText = 'Join Borg P2P Cloud Gaming network to play remotely or rent your PC out.' +
@@ -39,6 +41,9 @@ const emailInvite = "mailto:"
 
 export class Home {
     static async init() {
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        if (isSafari)
+            setInterval(safariHack, 3000);
         let loginPromise = Home.login();
         videoBitrate.addEventListener('input', changeBitrate);
 
@@ -148,6 +153,7 @@ export class Home {
                             break;
                         case 'status':
                             status.innerText = event.msg;
+                            resume.style.display = event.msg === 'video suspend' ? 'inline-block' : 'none';
                             break;
                     }
                 }, async (name, channel) => {
@@ -322,4 +328,10 @@ async function ensureSyncFolders(game) {
     const item = await response.json();
 
     return item.id;
+}
+
+function safariHack() {
+    if (!controlChannel) return;
+
+    controlChannel.send(Msg.reinit());
 }
