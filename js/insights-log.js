@@ -28,6 +28,8 @@ function con(severity, ...args) {
     if (err)
         args = args.slice(1);
     let text = args.join();
+    if (severity <= appInsights.SeverityLevel.Verbose && text.startsWith('ping'))
+        return;
     if (err)
         appInsights.trackException({exception: err, severityLevel: severity, properties: {message: text}});
     else
