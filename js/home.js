@@ -153,6 +153,8 @@ export class Home {
                                 clients.removeByValue(client);
                             break;
                         case 'status':
+                            if (client.exitCode === Client.StopCodes.CONCURRENT_SESSION)
+                                break;
                             status.innerText = event.msg;
                             const resumeRequired = event.msg === 'video suspend';
                             resume.style.display = resumeRequired ? 'inline-block' : 'none';
