@@ -129,10 +129,11 @@ export class Home {
             const clients = [];
 
             function killOthers(current) {
-                console.log('we have a winner!');
                 for (let j = 0; j < clients.length; j++) {
                     if (clients[j] !== current)
                         clients[j].destroy(Client.StopCodes.CONCURRENT_SESSION);
+                    else
+                        console.log('we have a winner: ', j);
                 }
                 clients.length = 1;
                 clients[0] = current;
@@ -142,7 +143,7 @@ export class Home {
                 const offer = nodes[i];
                 //set up client object with an event callback: gets connect, status, chat, and shutter events
                 const client = new Client(clientApi, signalFactory, video, (event) => {
-                    console.log('EVENT', event);
+                    console.log('EVENT', i, event);
 
                     switch (event.type) {
                         case 'exit':
@@ -156,6 +157,7 @@ export class Home {
                             if (client.exitCode === Client.StopCodes.CONCURRENT_SESSION)
                                 break;
                             status.innerText = event.msg;
+                            console.log(i, event.msg);
                             const resumeRequired = event.msg === 'video suspend';
                             resume.style.display = resumeRequired ? 'inline-block' : 'none';
                             if (resumeRequired)
