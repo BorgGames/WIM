@@ -287,10 +287,6 @@ export class Home {
                     }
                     break;
             }
-            if (config.game === 'factorio' && config.user) {
-                if (await Factorio.loginRequired())
-                    await Factorio.login(config.user, config.pwd);
-            }
 
             status.innerText = 'looking for a node...';
             const nodes = await Ephemeral.getNodes();
@@ -300,7 +296,14 @@ export class Home {
             const code = await Home.runClient(nodes, persistenceID, config, timeout);
 
             if (code !== 0)
-                alert(`Exit code: ${code}`);
+                switch (code) {
+                    case Client.StopCodes.GENERAL_ERROR:
+                        alert(`Exit code: ${code}: ${status.innerText}`);
+                        break;
+                    default:
+                        alert(`Exit code: ${code}`);
+                        break;
+                }
         } catch (e) {
             console.error(e);
             alert(e);
