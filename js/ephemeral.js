@@ -44,12 +44,21 @@ export class Ephemeral {
             throw new Error('Failed to submit ICE candidate');
     }
 
-    static async getNodes(endpoint, secret) {
+    static async getNodes(endpoint, secret, verMin, verMax) {
         endpoint = endpoint || API;
         const options = {};
         if (secret)
             options.headers = {'Secret': secret};
-        const response = await fetch(endpoint + 'offers', options);
+        let uri = endpoint + 'offers';
+        const search = {};
+        if (verMin !== undefined)
+            search.verMin = verMin;
+        if (verMax !== undefined)
+            search.verMax = verMax;
+        const filter = new URLSearchParams(search).toString();
+        if (filter)
+            uri += '?' + filter;
+        const response = await fetch(uri, options);
         if (!response.ok)
             throw new Error('Failed to fetch nodes');
 
