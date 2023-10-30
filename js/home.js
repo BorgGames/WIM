@@ -198,6 +198,7 @@ export class Home {
                             const launch = {
                                 Launch: "borg:games/" + config.game,
                                 PersistenceRoot: SYNC.isLoggedIn() ? persistenceID : undefined,
+                                SteamLicenses: SYNC.isLoggedIn() && devMode() ? await Steam.getSignedLicenses() : undefined,
                             };
                             channel.send("\x15" + JSON.stringify(launch));
                             await Session.waitForCommandRequest(channel);

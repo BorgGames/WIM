@@ -31,26 +31,43 @@ export async function getSteam() {
     return instance;
 }
 
-export async function hasLicenseToAny(appIDs, packageIDs) {
+export async function getSignedLicenses() {
     if (licenseBlob === null) {
         const response = await SYNC.download('special/approot:/Games/Steam.json');
         if (response === null)
             return false;
 
-        licenseBlob = await response.json();
+        try {
+            licenseBlob = await response.json();
+        } catch (e) {
+            console.error('corrupted Steam license list file Games/Steam.json', e);
+            return null;
+        }
     }
 
+    return licenseBlob;
+}
+
+export async function hasLicenseToAny(appIDs, packageIDs) {
+    const blob = await getSignedLicenses();
+    if (blob === null)
+        return null;
+    let licenses = null;
     try {
-        const licenses = JSON.parse(atob(licenseBlob.LicensesUtf8));
-        // AppID; PackageID
-        for (const license of licenses) {
-            if (appIDs.includes(license.AppID))
-                return true;
-            if (packageIDs.includes(license.PackageID))
-                return true;
-        }
+        licenses = JSON.parse(atob(blob.LicensesUtf8));
+        if (typeof licenses !== 'object')
+            throw new RangeError('invalid license list');
     } catch (e) {
-        console.log('unable to process Steam license list', e);
+        console.error('unable to process Steam license list', e);
+        licenseBlob = null;
+        return null;
+    }
+    // AppID; PackageID
+    for (const license of licenses) {
+        if (appIDs.includes(license.AppID))
+            return true;
+        if (packageIDs.includes(license.PackageID))
+            return true;
     }
     return false;
 }
