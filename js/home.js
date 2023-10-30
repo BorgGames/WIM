@@ -2,6 +2,7 @@
 import * as Msg from './streaming-client/src/msg.js';
 import * as Factorio from './games/factorio.js';
 import * as Minecraft from "./games/mc.js";
+import * as Steam from "./auth/steam.js";
 
 import {Client} from './streaming-client/src/client.js';
 import {ClientAPI} from "./client-api.js";
@@ -24,6 +25,7 @@ const resume = document.getElementById('video-resume');
 resume.onclick = () => video.play();
 
 const mcLoginDialog = document.getElementById('mc-login-dialog');
+const modeSwitch = document.getElementById('mode-switch');
 const inviteButtons = document.querySelectorAll('button.invite');
 const inviteText = 'Join Borg P2P Cloud Gaming network to play remotely or rent your PC out.' +
     ' You will need to install the Borg software on a gaming PC under Windows Pro.' +
@@ -42,6 +44,12 @@ const emailInvite = "mailto:"
 
 export class Home {
     static async init() {
+        modeSwitch.addEventListener('click', e => switchLoginMode(e));
+        if (!devMode())
+            switchLoginMode();
+        const steamLogin = document.getElementById('steam-login');
+        steamLogin.addEventListener('click', () => Steam.login());
+
         const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         if (isSafari)
             setInterval(safariHack, 3000);
@@ -84,6 +92,14 @@ export class Home {
             loggedIn = await Home.login(true);
 
         loginButton.disabled = loggedIn;
+
+        if (Steam.loginRedirected()) {
+            const licenses = await Steam.onLogin();
+            const factorioLicense = licenses.find(l => l.AppID === Factorio.APP_ID || Factorio.REPRESENTATIVE_PACKAGE_IDS.includes(l.PackageID));
+            Factorio.expand();
+            if (!factorioLicense)
+                alert("Factorio license not found.");
+        }
     }
 
     static async login(loud) {
@@ -246,7 +262,7 @@ export class Home {
                     return;
             }
 
-            const gameName = config.game === 'minecraft' ? 'Minecraft': 'Factorio';
+            const gameName = config.game === 'minecraft' ? 'Minecraft' : 'Factorio';
 
             document.body.classList.add('video');
 
@@ -295,6 +311,20 @@ export class Home {
             video.src = '';
             video.load();
         }
+    }
+}
+
+function switchLoginMode(e) {
+    e?.preventDefault();
+
+    const mode = modeSwitch.dataset['mode'] === 'steam' ? 'password' : 'steam';
+    modeSwitch.dataset['mode'] = mode;
+    modeSwitch.innerText = mode === 'steam'
+        ? 'Enter Factorio.com password or token instead'
+        : 'Login with Steam instead';
+
+    for(const mode of document.querySelectorAll('.login-mode')) {
+        mode.classList.toggle('selected');
     }
 }
 

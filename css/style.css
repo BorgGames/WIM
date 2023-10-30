@@ -62,6 +62,14 @@ a[href] {
     font-size: large;
 }
 
+.option {
+    display: none;
+}
+
+.option.selected {
+    display: block;
+}
+
 body.video .no-video {
     display: none;
 }
@@ -303,6 +311,10 @@ body.sync #space {
     display: inline-block;
 }
 
+#steam-qr {
+    display: inline-block;
+}
+
 #factorio {
     font-size: larger;
 }
@@ -312,8 +324,12 @@ body.sync #space {
     margin-bottom: 1em;
 }
 
-#factorio-credentials {
+#factorio-login-container {
     display: none;
+}
+
+#factorio-login-container.needs-login {
+    display: block;
 }
 
 .no-nodes-message {
@@ -335,10 +351,6 @@ button.action {
     min-width: 10em;
     padding: 0.3em 1em;
     margin: 0.3em 1em;
-}
-
-.needs-login #factorio-credentials {
-    display: block;
 }
 
 .release .dev {

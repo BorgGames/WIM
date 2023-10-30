@@ -1,11 +1,21 @@
-﻿import {SYNC} from "../onedrive.js";
+﻿import * as Steam from "../auth/steam.js";
+
+import {SYNC} from "../onedrive.js";
+
+import {devMode} from "../dev.js";
+import {promiseOr} from "../util.js";
 
 const LOGIN = 'https://borg-ephemeral.azurewebsites.net/cors/factorio/login';
+export const REPRESENTATIVE_PACKAGE_IDS = [88199];
+export const APP_ID = 427520;
 export const LOCAL_DATA = "Games/Factorio";
 const LOCAL_DATA_URL = `special/approot:/${LOCAL_DATA}`;
 const PLAYER_DATA_URL = LOCAL_DATA_URL + "/player-data.json";
 
+const steamQR = new QRCode(document.getElementById('steam-qr'), 'https://borg.games');
+
 const playFull = document.getElementById('factorio');
+const loginContainer = document.getElementById('factorio-login-container');
 const loginForm = document.getElementById('factorio-login-form');
 const uname = loginForm.elements["username"];
 const pwd = loginForm.elements["password"];
@@ -56,7 +66,7 @@ export async function login(user, pwd) {
 
     if (!credsResponse.ok)
         throw new Error(`Failed to save credentials: HTTP ${credsResponse.status}: ${credsResponse.statusText}`);
-    
+
     localStorage.removeItem('factorio-creds');
 
     console.log('Factorio logged in');
@@ -83,10 +93,10 @@ async function getCreds() {
     }
 }
 
-export async function loginRequired() {
+async function credsMissing() {
     try {
         var [player, creds] = await Promise.all([getPlayerData(), getCreds()]);
-    } catch (e){
+    } catch (e) {
         console.error('loginRequired', e);
         return true;
     }
@@ -98,16 +108,35 @@ export async function loginRequired() {
     return required;
 }
 
+export async function loginRequired() {
+    const creds = credsMissing().then(has => !has);
+    const steam = devMode()
+        ? Steam.hasLicenseToAny([APP_ID], REPRESENTATIVE_PACKAGE_IDS)
+        : Promise.resolve(false);
+    return !await promiseOr([creds, steam]);
+}
+
 let loginCheck = null;
 
 const playFactorio = document.getElementById('factorio-play');
 playFactorio.addEventListener('click', expand);
 
-async function expand() {
+export async function expand() {
     playFactorio.style.display = 'none';
     document.getElementById('factorio-login').style.display = 'inline-block';
-    await checkLogin();
+    const needsLogin = await checkLogin();
+    if (needsLogin && devMode()) {
+        const steam = await Steam.getSteam();
+        console.log('conduit connected. querying about Steam...');
+        try {
+            const result = await steam.call('LoginWithQR', [null]);
+            steamQR.makeCode(result.ChallengeURL);
+        } catch (e) {
+            console.log('unable to initiate Steam QR login: ', e);
+        }
+    }
 }
+
 if (creds)
     expand();
 
@@ -117,7 +146,7 @@ function credsEntered() {
     return uname.validity.valid && pwd.validity.valid
 }
 
-for(const input of [uname, pwd]) {
+for (const input of [uname, pwd]) {
     input.addEventListener('input', () => {
         playFull.disabled = !credsEntered();
         localStorage.setItem('factorio-creds', JSON.stringify({
@@ -136,7 +165,8 @@ async function checkLogin() {
         const needsLogin = await loginRequired();
         playFull.disabled = needsLogin && !credsEntered();
         console.log('Factorio needs login', needsLogin);
-        loginForm.classList.toggle('needs-login', needsLogin);
+        loginContainer.classList.toggle('needs-login', needsLogin);
+        return needsLogin;
     })();
     return await loginCheck;
 }

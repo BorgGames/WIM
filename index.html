@@ -50,23 +50,43 @@
             <button class="action invite" type="button">Invite</button>
             <button class="action" type="button" onclick="window.location.href = '/setup'">Setup own node</button>
         </div>
-        <form method="post" id="factorio-login-form">
-            <div id="factorio-credentials">
-                To play full game login with your Factorio account:
+        <div id="factorio-login-container">
+            <a href="#" id="mode-switch" data-mode="steam" class="dev">Enter Factorio.com password or token instead</a>
+            <form method="post" id="factorio-login-form" class="option login-mode">
+                <div id="factorio-credentials">
+                    <p>
+                        To play full game login with your Factorio account:
+                    </p>
+                    <p>
+                        <label for="uname" class="login-label"><b>Username</b></label>
+                        <br/>
+                        <input type="text" name="username" placeholder="Enter Username"
+                               id="uname" required autocomplete="username">
+                        <br/>
+                        <label for="psw" class="login-label"><b>Password</b></label>
+                        <br/>
+                        <input type="password" name="password" placeholder="Enter Password"
+                               id="psw" required autocomplete="current-password">
+                    </p>
+                </div>
+            </form>
+            <form id="steam-login-form" class="option selected login-mode">
                 <p>
-                    <label for="uname" class="login-label"><b>Username</b></label>
-                    <br/>
-                    <input type="text" name="username" placeholder="Enter Username"
-                           id="uname" required autocomplete="username">
-                    <br/>
-                    <label for="psw" class="login-label"><b>Password</b></label>
-                    <br/>
-                    <input type="password" name="password" placeholder="Enter Password"
-                           id="psw" required autocomplete="current-password">
+                    To play full game login with your Steam account:
                 </p>
-            </div>
-            <button class="action" type="button" id="factorio">Play Full Game</button>
-        </form>
+                <p>
+                    <button id="steam-login" type="button">Log in with Steam</button>
+                </p>
+                <p>
+                    -or-
+                </p>
+                <p>
+                    Scan QR code with Steam Mobile App
+                </p>
+                <div id="steam-qr"></div>
+            </form>
+        </div>
+        <button class="action" type="button" id="factorio">Play Full Game</button>
         <p></p>
         <button class="action" type="button" id="factorio-demo" disabled>Run Demo</button>
     </div>
@@ -91,9 +111,10 @@
                 <br/>
                 <br/>
                 <button id="onedriveLogin" class="action" type="button"
-                        title="Login with OneDrive to save game progress">Login</button>
+                        title="Login with OneDrive to save game progress">Login
+                </button>
             </label>
-            
+
             <button id="cancelLogin" class="action" type="button">Cancel</button>
         </h2>
     </div>
@@ -120,6 +141,7 @@
 <script src="https://webrtc.github.io/adapter/adapter-8.2.2.js"
         integrity="sha384-crh+K62xOkgTbJRVKt5nsdUKKjNKbK6wJSTOEpPSatLbgHhuycaKkpdnFD9Tty+v"
         crossorigin="anonymous"></script>
+<script src="/js/qrcode.js"></script>
 <script type="module">
     import {devMode} from "./js/dev.js";
     import {Ephemeral} from "./js/ephemeral.js";
