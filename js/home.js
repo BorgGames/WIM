@@ -172,9 +172,9 @@ export class Home {
                         case 'status':
                             if (client.exitCode === Client.StopCodes.CONCURRENT_SESSION)
                                 break;
-                            status.innerText = event.msg;
-                            console.log(i, event.msg);
-                            const resumeRequired = event.msg === 'video suspend';
+                            status.innerText = event.msg.str;
+                            console.log(i, event.msg.str);
+                            const resumeRequired = event.msg.str === 'video suspend';
                             resume.style.display = resumeRequired ? 'inline-block' : 'none';
                             if (resumeRequired)
                                 video.autoplay = false;

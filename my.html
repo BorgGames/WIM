@@ -109,8 +109,8 @@
                         resolve(event.code);
                         break;
                     case 'status':
-                        status.innerText = event.msg;
-                        if (!event.msg) {
+                        status.innerText = event.msg.str;
+                        if (!event.msg.str) {
                             const connectionType = getConnectionType(client.rtc.rtc);
                             if (connectionType === 'relay') {
                                 popupContent.innerText = '! slow connection due to a firewall';
