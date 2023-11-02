@@ -31,16 +31,36 @@ export class ConduitService {
     }
 
     onResponse(data) {
+        if (this.expectedLength && data.length < this.expectedLength) {
+            console.error('ConduitService: incomplete response: ', data);
+            return;
+        }
         let msg = decoder.decode(data);
+        console.debug('ConduitService.onResponse', msg);
         if (msg.startsWith('Content-Length: ')) {
             const idx = msg.indexOf('\r\n\r\n');
             if (idx === -1){
                 console.error('ConduitService: bad header: ', msg);
                 return;
             }
+            const len = parseInt(msg.substring(16, idx));
             msg = msg.substring(idx + 4);
+            if (msg === "" && len > 0) {
+                this.expectedLength = len;
+                this.reconstructedMessage = "";
+                return;
+            }
+
+            this.expectedLength = null;
         }
-        const response = JSON.parse(msg);
+        // TODO: reconstruct msg if it's split
+        let response = null;
+        try {
+            response = JSON.parse(msg);
+        } catch (e) {
+            console.error('ConduitService: bad response: ', msg);
+            return;
+        }
         const id = response.id;
         const call = this.calls[id];
         delete this.calls[id];
