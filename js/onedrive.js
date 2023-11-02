@@ -15,7 +15,7 @@ export class OneDrive {
     }
 
     async makeRequest(url, options) {
-        if (!this.accessToken) throw new Error('Not logged in');
+        if (!this.accessToken) throw new Error(NOT_LOGGED_IN);
         
         try {
             this.accessToken = (await this.auth.acquireTokenSilent({ scopes })).accessToken;
@@ -131,5 +131,6 @@ export class OneDrive {
     }
 }
 
+export const NOT_LOGGED_IN = "Not logged in";
 export const SYNC = new OneDrive('4c1b168d-3889-494d-a1ea-1a95c3ecda51');
 export const MY = new OneDrive('c516d4c8-2391-481d-a098-b66382079a38');
