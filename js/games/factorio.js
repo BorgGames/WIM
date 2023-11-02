@@ -11,9 +11,6 @@ export const APP_ID = 427520;
 export const LOCAL_DATA = "Games/Factorio";
 const LOCAL_DATA_URL = `special/approot:/${LOCAL_DATA}`;
 const PLAYER_DATA_URL = LOCAL_DATA_URL + "/player-data.json";
-
-const steamQR = new QRCode(document.getElementById('steam-qr'), 'https://borg.games');
-
 const playFull = document.getElementById('factorio');
 const loginContainer = document.getElementById('factorio-login-container');
 const loginForm = document.getElementById('factorio-login-form');
@@ -110,9 +107,7 @@ async function credsMissing() {
 
 export async function loginRequired() {
     const creds = credsMissing().then(has => !has);
-    const steam = devMode()
-        ? Steam.hasLicenseToAny([APP_ID], REPRESENTATIVE_PACKAGE_IDS)
-        : Promise.resolve(false);
+    const steam = Steam.hasLicenseToAny([APP_ID], REPRESENTATIVE_PACKAGE_IDS);
     return !await promiseOr([creds, steam]);
 }
 
@@ -125,12 +120,14 @@ export async function expand() {
     playFactorio.style.display = 'none';
     document.getElementById('factorio-login').style.display = 'inline-block';
     const needsLogin = await checkLogin();
-    if (needsLogin && devMode()) {
+    if (needsLogin) {
         const steam = await Steam.getSteam();
         console.log('conduit connected. querying about Steam...');
         try {
             const result = await steam.call('LoginWithQR', [null]);
-            steamQR.makeCode(result.ChallengeURL);
+            await Steam.loginWithQR(result.ChallengeURL);
+            if (await checkLogin()) 
+                alert("You don't have Factorio on Steam, login with username and password instead");
         } catch (e) {
             console.log('unable to initiate Steam QR login: ', e);
         }
@@ -160,6 +157,8 @@ async function checkLogin() {
     if (loginCheck)
         return await loginCheck;
 
+    Steam.getSteam();
+
     loginCheck = (async () => {
         playFull.disabled = !credsEntered();
         const needsLogin = await loginRequired();
@@ -168,6 +167,8 @@ async function checkLogin() {
         loginContainer.classList.toggle('needs-login', needsLogin);
         return needsLogin;
     })();
-    return await loginCheck;
+    const result = await loginCheck;
+    loginCheck = null;
+    return result;
 }
 

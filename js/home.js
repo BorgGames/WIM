@@ -45,8 +45,6 @@ const emailInvite = "mailto:"
 export class Home {
     static async init() {
         modeSwitch.addEventListener('click', e => switchLoginMode(e));
-        if (!devMode())
-            switchLoginMode();
         const steamLogin = document.getElementById('steam-login');
         steamLogin.addEventListener('click', () => Steam.login());
 
@@ -93,13 +91,8 @@ export class Home {
 
         loginButton.disabled = loggedIn;
 
-        if (Steam.loginRedirected()) {
-            const licenses = await Steam.onLogin();
-            const factorioLicense = licenses.find(l => l.AppID === Factorio.APP_ID || Factorio.REPRESENTATIVE_PACKAGE_IDS.includes(l.PackageID));
-            Factorio.expand();
-            if (!factorioLicense)
-                alert("Factorio license not found.");
-        }
+        if (Steam.loginRedirected())
+            await handleSteamLogin();
     }
 
     static async login(loud) {
@@ -198,7 +191,7 @@ export class Home {
                             const launch = {
                                 Launch: "borg:games/" + config.game,
                                 PersistenceRoot: SYNC.isLoggedIn() ? persistenceID : undefined,
-                                SteamLicenses: SYNC.isLoggedIn() && devMode() ? await Steam.getSignedLicenses() : undefined,
+                                SteamLicenses: SYNC.isLoggedIn() ? await Steam.getSignedLicenses() : undefined,
                             };
                             channel.send("\x15" + JSON.stringify(launch));
                             await Session.waitForCommandRequest(channel);
@@ -318,6 +311,17 @@ export class Home {
     }
 }
 
+async function handleSteamLogin() {
+    if (!SYNC.isLoggedIn())
+        if (!await showLoginDialog())
+            return;
+    const licenses = await Steam.onLogin();
+    const factorioLicense = licenses.find(l => l.AppID === Factorio.APP_ID || Factorio.REPRESENTATIVE_PACKAGE_IDS.includes(l.PackageID));
+    Factorio.expand();
+    if (!factorioLicense)
+        alert("Factorio license not found.");
+}
+
 function switchLoginMode(e) {
     e?.preventDefault();
 
@@ -332,8 +336,10 @@ function switchLoginMode(e) {
     }
 }
 
-async function showLoginDialog() {
+export async function showLoginDialog(disableCancel) {
     const dialog = document.getElementById('login-dialog');
+    const cancel = document.getElementById('cancelLogin');
+    cancel.style.display = !!disableCancel ? 'none' : 'inline-block';
     dialog.style.display = 'flex';
     const promise = new Promise(async (resolve) => {
         const doLogin = async () => {
@@ -346,7 +352,7 @@ async function showLoginDialog() {
         // if (SYNC.account)
         //     await doLogin();
         document.getElementById('onedriveLogin').onclick = doLogin;
-        document.getElementById('cancelLogin').onclick = () => resolve(false);
+        cancel.onclick = () => resolve(false);
     });
     try {
         await promise;

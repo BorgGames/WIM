@@ -1,6 +1,7 @@
 ﻿import {SYNC} from "../onedrive.js";
 import {ConduitService} from "../conduit.js";
 import {timeout} from "../streaming-client/src/util.js";
+import {showLoginDialog} from "../home.js";
 
 
 let licenseBlob = null;
@@ -19,23 +20,34 @@ export function loginRedirected() {
     return query.get('openid.op_endpoint') === 'https://steamcommunity.com/openid/login';
 }
 
-export async function getSteam() {
-    if (instance !== null)
-        return instance;
-
+async function getSteamTask() {
     const steamTimeout = timeout(60000);
-    instance = await ConduitService.connect('borg:cube:steam', '1.1', '2.0', steamTimeout);
-    instance.events.subscribe('close', () => {
+    const steam = await ConduitService.connect('borg:cube:steam', '1.1', '2.0', steamTimeout);
+    steam.events.subscribe('close', () => {
         instance = null
     });
-    return instance;
+    return steam;
+}
+
+export async function getSteam() {
+    if (instance === null)
+        instance = getSteamTask();
+    return await instance;
 }
 
 export async function getSignedLicenses() {
     if (licenseBlob === null) {
+        if (!SYNC.isLoggedIn())
+            return null;
         const response = await SYNC.download('special/approot:/Games/Steam.json');
-        if (response === null)
-            return false;
+        if (response === null) {
+            const stored = localStorage.getItem("STEAM_LICENSES");
+            if (stored) {
+                licenseBlob = await saveLicenses(JSON.parse(stored));
+                return licenseBlob;
+            }
+            return null;
+        }
 
         try {
             licenseBlob = await response.json();
@@ -101,15 +113,61 @@ export async function onLogin() {
         }
         console.error(e);
     }
-    const licenses = JSON.parse(atob(result.LicensesUtf8));
+
+    return await saveLicenses(result);
+}
+
+export async function loginWithQR(challengeURL) {
+    const steam = await getSteam();
+    const qrElement = document.getElementById('steam-qr');
+    const steamQR = new QRCode(qrElement, 'https://borg.games');
+    steamQR.makeCode(challengeURL);
+    let result = null;
+    while (true) {
+        try {
+            result = await steam.call('LoginWithQR', [challengeURL]);
+            if (result.ChallengeURL) {
+                challengeURL = result.ChallengeURL;
+                qrElement.style.opacity = "1";
+                steamQR.makeCode(challengeURL);
+            } else {
+                if (!SYNC.isLoggedIn()) {
+                    localStorage.setItem("STEAM_LICENSES", JSON.stringify(result.Licenses));
+                    if (!await showLoginDialog(true))
+                        window.location.reload();
+                }
+                return await saveLicenses(result.Licenses);
+            }
+        } catch (e) {
+            const err = e.data ?? e;
+            if (err.type === "System.Runtime.InteropServices.ExternalException") {
+                if (err.message.includes("TryAnotherCM")) {
+                    challengeURL = null;
+                    qrElement.style.opacity = "0.5";
+                    continue;
+                }
+            }
+
+            console.error(e);
+            return;
+        }
+    }
+}
+
+export async function saveLicenses(signedLicenseList) {
+    const licenses = JSON.parse(atob(signedLicenseList.LicensesUtf8));
 
     const saveResponse = await SYNC.makeRequest('special/approot:/Games/Steam.json:/content', {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(result),
+        body: JSON.stringify(signedLicenseList),
     });
     if (!saveResponse.ok)
         console.warn('Failed to save Steam login: ', saveResponse.status, saveResponse.statusText);
+    else
+        licenseBlob = signedLicenseList;
+
+    localStorage.removeItem("STEAM_LICENSES");
 
     return licenses;
 }
