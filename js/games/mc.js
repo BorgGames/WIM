@@ -15,8 +15,17 @@ export async function beginLogin() {
 export async function completeLogin(code) {
     const completionUrl = AUTH_ENDPOINT + 'await/' + encodeURIComponent(code);
     const completion = await fetch(completionUrl, {method: 'POST'});
-    if (!completion.ok)
-        throw new Error(`HTTP ${completion.status}: ${completion.statusText}`);
+    if (!completion.ok) {
+        let error = "";
+        try {
+            error = await completion.text();
+        } catch (e) {}
+        if (completion.status === 401 && error)
+            throw new Error(error);
+        if (error)
+            error = "\r\n" + error;
+        throw new Error(`HTTP ${completion.status}: ${completion.statusText} ${error}`);
+    }
     const session = await completion.json();
     const save = await SYNC.makeRequest(CREDS_URL + ':/content', {
         method: 'PUT',
