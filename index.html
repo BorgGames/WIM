@@ -51,22 +51,11 @@
             <button class="action" type="button" onclick="window.location.href = '/setup'">Setup own node</button>
         </div>
         <div id="factorio-login-container">
-            <a href="#" id="mode-switch" data-mode="steam">Enter Factorio.com password or token instead</a>
+            <a href="#" id="mode-switch" data-mode="steam">Use in-game login instead</a>
             <form method="post" id="factorio-login-form" class="option login-mode">
                 <div id="factorio-credentials">
                     <p>
-                        To play full game login with your Factorio account:
-                    </p>
-                    <p>
-                        <label for="uname" class="login-label"><b>Username</b></label>
-                        <br/>
-                        <input type="text" name="username" placeholder="Enter Username"
-                               id="uname" required autocomplete="username">
-                        <br/>
-                        <label for="psw" class="login-label"><b>Password</b></label>
-                        <br/>
-                        <input type="password" name="password" placeholder="Enter Password"
-                               id="psw" required autocomplete="current-password">
+                        You must login in the game within a few minutes.
                     </p>
                 </div>
             </form>
@@ -156,9 +145,7 @@
     const full = document.getElementById('factorio');
     full.onclick = function () {
         Home.launch({
-            game: 'factorio',
-            user: document.getElementById('uname').value,
-            pwd: document.getElementById('psw').value
+            game: 'factorio'
         });
     };
 

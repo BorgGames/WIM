@@ -44,7 +44,6 @@ const emailInvite = "mailto:"
 
 export class Home {
     static async init() {
-        modeSwitch.addEventListener('click', e => switchLoginMode(e));
         const steamLogin = document.getElementById('steam-login');
         steamLogin.addEventListener('click', () => Steam.login());
 
@@ -266,8 +265,6 @@ export class Home {
 
             switch (config.game) {
                 case 'factorio':
-                    if (config.user && await Factorio.loginRequired())
-                        await Factorio.login(config.user, config.pwd);
                     break;
                 case 'minecraft':
                     if (await Minecraft.loginRequired()) {
@@ -320,20 +317,6 @@ async function handleSteamLogin() {
     Factorio.expand();
     if (!factorioLicense)
         alert("Factorio license not found.");
-}
-
-function switchLoginMode(e) {
-    e?.preventDefault();
-
-    const mode = modeSwitch.dataset['mode'] === 'steam' ? 'password' : 'steam';
-    modeSwitch.dataset['mode'] = mode;
-    modeSwitch.innerText = mode === 'steam'
-        ? 'Enter Factorio.com password or token instead'
-        : 'Login with Steam instead';
-
-    for(const mode of document.querySelectorAll('.login-mode')) {
-        mode.classList.toggle('selected');
-    }
 }
 
 export async function showLoginDialog(disableCancel) {

@@ -23,9 +23,11 @@ export function loginRedirected() {
 async function getSteamTask() {
     const steamTimeout = timeout(60000);
     const steam = await ConduitService.connect('borg:cube:steam', '1.1', '2.0', steamTimeout);
-    steam.events.subscribe('close', () => {
-        instance = null
-    });
+    if (steam) {
+        steam.events.subscribe('close', () => {
+            instance = null
+        });
+    }
     return steam;
 }
 
