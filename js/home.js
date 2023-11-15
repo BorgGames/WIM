@@ -280,7 +280,7 @@ export class Home {
             }
 
             status.innerText = 'looking for a node...';
-            const nodes = await Ephemeral.getNodes();
+            const nodes = await Ephemeral.getNodes(null, null, config.nodeMin, config.nodeMax);
             if (nodes.length === 0)
                 throw new Error('No nodes currently available. Try again later.');
 
