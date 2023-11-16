@@ -215,6 +215,7 @@ export class Home {
                     } else if (event.code === 'Enter' && event.ctrlKey && event.altKey) {
                         util.toggleFullscreen(client.element);
                     } else if (event.code === 'Slash' && event.ctrlKey && event.altKey) {
+                        document.getElementById('video-resolution').innerText = `${video.videoWidth} x ${video.videoHeight}`;
                         document.body.classList.toggle('video-overlay');
                     }
                 };

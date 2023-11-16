@@ -51,6 +51,12 @@ a[href] {
     padding: 1em;
 }
 
+.header {
+    grid-area: header;
+    min-height: 0;
+    padding: 1em;
+}
+
 #popup:checked ~ .alert-message {
     display: none;
 }
