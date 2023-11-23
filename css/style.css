@@ -267,6 +267,17 @@ body.video .video-container {
     padding: 0.5em;
 }
 
+.notification {
+    display: none;
+    opacity: 0;
+    transition: all 1s linear;
+}
+
+.notification.show {
+    display: block;
+    opacity: 1;
+}
+
 .video-overlay #video-overlay {
     display: grid;
 }

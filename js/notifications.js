@@ -7,6 +7,9 @@ export async function notify(message, timeout_ms) {
     notification.className = 'notification';
     notification.textContent = message;
     container.appendChild(notification);
+    notification.addEventListener('click', () => {
+        notification.classList.remove('show');
+    });
 
     await wait(1);
 
