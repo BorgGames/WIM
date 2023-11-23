@@ -251,6 +251,22 @@ body.video .video-container {
     grid-template-rows: auto 1fr auto;
 }
 
+#notifications {
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.notification {
+    margin: 0.5em;
+    border-radius: 0.5em;
+    box-shadow: 0 0 0.5em black;
+    text-align: right;
+    background: lightyellow;
+    color: black;
+    padding: 0.5em;
+}
+
 .video-overlay #video-overlay {
     display: grid;
 }

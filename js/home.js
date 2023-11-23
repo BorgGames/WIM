@@ -13,9 +13,11 @@ import {Session} from "./session.js";
 import {getNetworkStatistics} from "./connectivity-check.js";
 import {devMode} from "./dev.js";
 import {SYNC} from "./onedrive.js";
+import {notify} from "./notifications.js";
 
 const clientApi = new ClientAPI();
 const status = document.getElementById('game-status');
+const videoContainer = document.querySelector('.video-container');
 const video = document.getElementById('stream');
 const videoBitrate = document.getElementById('video-bitrate');
 
@@ -150,7 +152,7 @@ export class Home {
             for (let i = 0; i < nodes.length; i++) {
                 const offer = nodes[i];
                 //set up client object with an event callback: gets connect, status, chat, and shutter events
-                const client = new Client(clientApi, signalFactory, video, (event) => {
+                const client = new Client(clientApi, signalFactory, videoContainer, (event) => {
                     console.log('EVENT', i, event);
 
                     switch (event.type) {
@@ -170,6 +172,9 @@ export class Home {
                             resume.style.display = resumeRequired ? 'inline-block' : 'none';
                             if (resumeRequired)
                                 video.autoplay = false;
+                            break;
+                        case 'chat':
+                            notify(event.msg.str, 30000);
                             break;
                     }
                 }, async (name, channel) => {
@@ -255,8 +260,11 @@ export class Home {
                 if (!await showLoginDialog())
                     return;
             }
+            
+            const uri = new URL('borg:' + config.game);
 
-            const gameName = config.game === 'minecraft' ? 'Minecraft' : 'Factorio';
+            const gameName = config.game === 'minecraft' || config.game.startsWith("minecraft?")
+                ? 'Minecraft' : 'Factorio';
 
             document.body.classList.add('video');
 
@@ -279,6 +287,9 @@ export class Home {
                     }
                     break;
             }
+            
+            if (uri.searchParams.get('trial') === '1')
+                notify('Trial mode: 5 minutes', 30000);
 
             status.innerText = 'looking for a node...';
             const nodes = await Ephemeral.getNodes(null, null, config.nodeMin, config.nodeMax);
