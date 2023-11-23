@@ -119,6 +119,10 @@
         <h2>Copy the code and enter it on the login page</h2>
         <h3 class="copy" id="mc-code"></h3>
         <a id="mc-login-link" target="_blank">Open the login page</a>
+        <p></p>
+        - or -
+        <button id="mc-trial" class="action" type="button">Play Trial</button>
+        <i>trial has 5 minute session limit</i>
     </div>
 </div>
 
@@ -138,7 +142,8 @@
 <script type="module">
     import {devMode} from "./js/dev.js";
     import {Ephemeral} from "./js/ephemeral.js";
-    import {Home} from "./js/home.js";
+    import {Home, showLoginDialog} from "./js/home.js";
+    import {SYNC} from "./js/onedrive.js";
 
     const demo = document.getElementById('factorio-demo');
     demo.onclick = function () {
@@ -154,7 +159,19 @@
     };
 
     const fullMinecraft = document.getElementById('minecraft');
-    fullMinecraft.onclick = () => Home.launch({game: 'minecraft', nodeMin: '0.2.15'});
+    fullMinecraft.onclick = async function () {
+        fullMinecraft.disabled = true;
+        try {
+            if (SYNC.isLoggedIn() || await showLoginDialog())
+                return Home.launch({game: 'minecraft', nodeMin: '0.2.15'});
+            return Home.launch({game: 'minecraft?trial=1', nodeMin: '0.2.15'});
+        } finally {
+            fullMinecraft.disabled = false;
+        }
+    };
+
+    const trialMinecraft = document.getElementById('mc-trial');
+    trialMinecraft.onclick = () => Home.launch({game: 'minecraft?trial=1', nodeMin: '0.2.15'});
 
     async function main() {
         if (devMode()) {
