@@ -165,7 +165,7 @@
         try {
             if (SYNC.isLoggedIn() || await showLoginDialog())
                 return Home.launch({game: 'minecraft', nodeMin: '0.2.15'});
-            return Home.launch({game: 'minecraft?trial=1', nodeMin: '0.2.15'});
+            return Home.launch({game: 'minecraft?trial=1', nodeMin: '0.2.17'});
         } finally {
             fullMinecraft.disabled = false;
         }
