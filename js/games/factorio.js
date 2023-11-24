@@ -55,9 +55,9 @@ export async function expand() {
         console.log('conduit connected. querying about Steam...');
         try {
             const result = await steam.call('LoginWithQR', [null]);
-            await Steam.loginWithQR(result.ChallengeURL);
-            if (await checkLogin()) 
-                alert("You don't have Factorio on Steam, login with username and password instead");
+            if (await Steam.loginWithQR(result.ChallengeURL))
+                if (await checkLogin()) 
+                    alert("You don't have Factorio on Steam, login with username and password instead");
         } catch (e) {
             console.log('unable to initiate Steam QR login: ', e);
         }
