@@ -76,12 +76,20 @@ export class Ephemeral {
                 throw new Error('Failed to fetch ICE candidates');
 
             const session = await response.json();
+            let done = false;
             for (const candidate of session.offerIce) {
                 if (seen.has(candidate))
                     continue;
                 await this.onCandidate(candidate, null);
                 seen.add(candidate);
+                const obj = JSON.parse(candidate);
+                if (obj && !obj.candidate) {
+                    console.log('all candidates received');
+                    done = true;
+                }
             }
+            if (done)
+                return;
 
             await wait(1000);
         }
