@@ -22,6 +22,8 @@ const videoContainer = document.querySelector('.video-container');
 const video = document.getElementById('stream');
 const videoBitrate = document.getElementById('video-bitrate');
 
+const NETWORK = null;
+
 let controlChannel = null;
 
 const resume = document.getElementById('video-resume');
@@ -134,7 +136,7 @@ export class Home {
     }
 
     static runClient(nodes, persistenceID, config, timeout) {
-        const signalFactory = (onFatal) => new Ephemeral();
+        const signalFactory = (onFatal) => new Ephemeral(null, NETWORK);
 
         return new Promise(async (resolve) => {
             const clients = [];
@@ -294,7 +296,7 @@ export class Home {
                 notify('Trial mode: 5 minutes', 30000);
 
             status.innerText = 'looking for a node...';
-            const nodes = await Ephemeral.getNodes(null, null, config.nodeMin, config.nodeMax);
+            const nodes = await Ephemeral.getNodes(null, NETWORK, config.nodeMin, config.nodeMax);
             if (nodes.length === 0)
                 throw new Error('No nodes currently available. Try again later.');
 
