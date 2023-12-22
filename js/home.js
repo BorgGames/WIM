@@ -1,7 +1,8 @@
 ﻿import * as util from "./streaming-client/src/util.js";
-import * as Msg from './streaming-client/src/msg.js';
+import * as GOG from "./auth/gog.js";
 import * as Factorio from './games/factorio.js';
 import * as Minecraft from "./games/mc.js";
+import * as Msg from './streaming-client/src/msg.js';
 import * as Steam from "./auth/steam.js";
 
 import {Client} from './streaming-client/src/client.js';
@@ -196,6 +197,7 @@ export class Home {
                                 Launch: "borg:games/" + config.game,
                                 PersistenceRoot: SYNC.isLoggedIn() ? persistenceID : undefined,
                                 SteamLicenses: SYNC.isLoggedIn() ? await Steam.getSignedLicenses() : undefined,
+                                GogToken: SYNC.isLoggedIn() ? await GOG.getToken() : undefined,
                             };
                             channel.send("\x15" + JSON.stringify(launch));
                             await Session.waitForCommandRequest(channel);
