@@ -64,7 +64,7 @@ async function getProfile(accessToken) {
     return await profile.json();
 }
 
-async function getCreds() {
+export async function getCreds() {
     const response = await SYNC.download(CREDS_URL);
     if (response === null)
         return null;

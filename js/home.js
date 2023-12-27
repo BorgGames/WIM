@@ -200,6 +200,7 @@ export class Home {
                                 PersistenceRoot: SYNC.isLoggedIn() ? persistenceID : undefined,
                                 SteamLicenses: SYNC.isLoggedIn() ? await Steam.getSignedLicenses() : undefined,
                                 GogToken: SYNC.isLoggedIn() ? await GOG.getToken() : undefined,
+                                Cml: SYNC.isLoggedIn() ? await Minecraft.getCreds() : undefined,
                             };
                             channel.send("\x15" + JSON.stringify(launch));
                             await Session.waitForCommandRequest(channel);
