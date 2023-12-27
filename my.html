@@ -222,7 +222,7 @@
                         window.history.back();
 
                     if (code !== 0 && code !== 'cancelled' && (!(code instanceof Error && code.message === 'cancelled')))
-                        alert(`Exit code: ${code}`);
+                        alert(code instanceof Error ? (code.message || `Unexpected error: ${code}`) : `Exit code: ${code}`);
                 } finally {
                     window.removeEventListener('popstate', cancel);
                 }

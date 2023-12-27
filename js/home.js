@@ -309,7 +309,10 @@ export class Home {
                         alert(`Exit code: ${code}: ${status.innerText}`);
                         break;
                     default:
-                        alert(`Exit code: ${code}`);
+                        let message = code instanceof Error
+                            ? (code.message || `Unexpected error: ${code}`)
+                            : `Exit code: ${code}`;
+                        alert(message);
                         break;
                 }
         } catch (e) {
