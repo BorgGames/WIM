@@ -1,6 +1,6 @@
 import {Ephemeral, IBorgNode} from "./ephemeral.js";
 import {PubSub} from "./util.js";
-import {RTC} from "../js/streaming-client/built/rtc";
+import {RTC} from "../js/streaming-client/built/rtc.js";
 import {timeout} from "../js/streaming-client/built/util.js";
 
 const jsonrpc = "2.0";
