@@ -1,4 +1,6 @@
-﻿export function makeApp(clientID) {
+﻿declare var msal: any;
+
+export function makeApp(clientID: string) {
     const msalConfig = {
         auth: {
             clientId: clientID,
@@ -11,7 +13,7 @@
     
     return new msal.PublicClientApplication(msalConfig);
 }
-export async function login(clientApp, scopes, loud, partial) {
+export async function login(clientApp: any, scopes: string[], loud?: boolean, partial?: { account?: any }) {
     partial = partial || {};
     loud = loud || false;
     const loginRequest = { scopes };
@@ -74,13 +76,13 @@ export async function login(clientApp, scopes, loud, partial) {
                 return null;
             }
             tokenResponse = await clientApp.acquireTokenRedirect(loginRequest);
-        } else if (err instanceof msal.BrowserAuthError && err.errorCode === 'monitor_window_timeout'
-            && +localStorage.getItem(cooldownKey) < new Date().getTime()) {
+        } else if (err instanceof msal.BrowserAuthError && (<any>err).errorCode === 'monitor_window_timeout'
+            && +localStorage.getItem(cooldownKey)! < new Date().getTime()) {
             if (!loud) {
                 console.log('interactive login required');
                 return null;
             }
-            localStorage.setItem(cooldownKey, new Date().getTime() + 90 * 1000);
+            localStorage.setItem(cooldownKey, String(new Date().getTime() + 90 * 1000));
             tokenResponse = await clientApp.acquireTokenRedirect(loginRequest);
         } else {
             throw err;

@@ -1,7 +1,7 @@
 const exePrefix = '//exe/';
 
 export class GameID {
-    static tryGetExe(uriString) {
+    static tryGetExe(uriString: string) {
         const uri = new URL(uriString);
         if (uri.protocol !== "borg:" || !uri.pathname.startsWith(exePrefix))
             return null;

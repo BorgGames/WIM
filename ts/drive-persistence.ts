@@ -2,18 +2,18 @@
 const MONITOR_PREFIX = "https://api.onedrive.com/v1.0/monitor/";
 const MAX_CONTENT_SIZE = 128*1024;
 
-function codeResponse(channel, code, text) {
+function codeResponse(channel: RTCDataChannel, code: number, text: string) {
     channel.send(JSON.stringify({
         status: code,
         body: btoa(text),
     }));
 }
 
-const forbidden = (channel, text) => codeResponse(channel, 403, text);
-const unauthorized = (channel, text) => codeResponse(channel, 401, text);
-const invalidArg = (channel, text) => codeResponse(channel, 400, text);
+const forbidden = (channel: RTCDataChannel, text: string) => codeResponse(channel, 403, text);
+const unauthorized = (channel: RTCDataChannel, text: string) => codeResponse(channel, 401, text);
+const invalidArg = (channel: RTCDataChannel, text: string) => codeResponse(channel, 400, text);
 
-function odataError(channel, httpCode, errorCode, message) {
+function odataError(channel: RTCDataChannel, httpCode: number, errorCode: string, message: string) {
     channel.send(JSON.stringify({
         status: httpCode,
         contentType: "application/json",
@@ -26,42 +26,49 @@ function odataError(channel, httpCode, errorCode, message) {
     }));
 }
 
-const canonicalize = id => decodeURIComponent(id);
+const canonicalize = (id: string) => decodeURIComponent(id);
 
-function blobToBase64(blob) {
+function blobToBase64(blob: Blob) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.substring(reader.result.indexOf(',') + 1));
+        reader.onloadend = () => {
+            const val = reader.result as string;
+            return resolve(val.substring(val.indexOf(',') + 1));
+        };
         reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
 }
 
-async function blobToObject(blob) {
+async function blobToObject(blob: Blob) {
     const json = await blob.text();
     return JSON.parse(json);
 }
 
-async function base64ToArrayBuffer(base64) {
+async function base64ToArrayBuffer(base64: string) {
     const dataUrl = "data:application/octet-stream;base64," + base64;
     const result = await fetch(dataUrl);
     return await result.arrayBuffer();
 }
 
-function bytesToBase64(bytes) {
+function bytesToBase64(bytes: Uint8Array) {
     const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join("");
     return btoa(binString);
 }
 
-function strToBase64(str) {
+function strToBase64(str: string) {
     return bytesToBase64(new TextEncoder().encode(str));
 }
 
-const isTypeJson = contentType => contentType && contentType.startsWith("application/json");
+const isTypeJson = (contentType: string | null) => contentType && contentType.startsWith("application/json");
 
 export class OneDrivePersistence {
-    async forward(event) {
-        const channel = event.target;
+    items: Set<string>;
+    channel: RTCDataChannel;
+    private _messageHandler: (event: any) => Promise<void>;
+
+    async forward(event: MessageEvent<string>) {
+        const channel = <RTCDataChannel>event.target;
         const request = JSON.parse(event.data);
         try {
             if (request.options?.body)
@@ -118,7 +125,7 @@ export class OneDrivePersistence {
         }
     }
 
-    async updateMapper(location, bytes) {
+    async updateMapper(location: string | null, bytes: Blob | null) {
         if (location) {
             console.error("Unexpected location", location);
         }
@@ -140,19 +147,19 @@ export class OneDrivePersistence {
         }
     }
 
-    addItem(id) {
+    addItem(id: string) {
         const canonical = canonicalize(id);
         this.items.add(canonical);
     }
 
-    allowed(id) {
+    allowed(id: string) {
         const canonical = canonicalize(id);
         return this.items.has(canonical);
     }
 
-    constructor(channel, allowed) {
+    constructor(channel: RTCDataChannel, allowed?: string[]) {
         this.channel = channel;
-        this.items = new Set();
+        this.items = new Set<string>();
         this._messageHandler = this.forward.bind(this);
         if (allowed) {
             for (const id of allowed)
@@ -166,7 +173,7 @@ export class OneDrivePersistence {
     }
 }
 
-function parseRequest(path, method) {
+function parseRequest(path: string, method: string) {
     const parts = path.substring(1).split('/');
     if (parts[0] !== "")
         throw new RangeError("Invalid path");
@@ -224,7 +231,12 @@ function parseRequest(path, method) {
 }
 
 class Request {
-    constructor(url, returnItems) {
+    url: string;
+    returnItems: boolean;
+    drive?: string;
+    item?: string;
+
+    constructor(url: string, returnItems: boolean) {
         this.url = url;
         this.returnItems = returnItems;
     }

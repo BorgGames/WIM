@@ -1,24 +1,33 @@
 import {OneDriveRunningGames as GameFS} from "./drive-gamefs.js";
-import * as util from "./streaming-client/src/util.js";
+import * as util from "../js/streaming-client/built/util.js";
 import {GameID} from "./gid.js";
 
-const gameList = document.getElementById('game-list');
-const details = document.getElementById('game-details');
-const titleUI = document.getElementById('game-title');
-const launchButton = document.getElementById('launch-button');
-const gamePC = document.getElementById('game-pc');
-const runningUI = document.getElementById('game-running');
-const supportStatus = document.getElementById('support-status');
+const gameList = <HTMLSelectElement>document.getElementById('game-list')!;
+const details = document.getElementById('game-details')!;
+const titleUI = document.getElementById('game-title')!;
+const launchButton = document.getElementById('launch-button')!;
+const gamePC = <HTMLSelectElement>document.getElementById('game-pc');
+const runningUI = document.getElementById('game-running')!;
+const supportStatus = document.getElementById('support-status')!;
+
+interface IMyGame {
+    title: string;
+    offers: any[];
+}
 
 export class Launcher {
-    static async selectGame(uri) {
+    static selectedGame: IMyGame | null;
+    static games: {[uri: string]: IMyGame};
+    static launch: (pc: string, exe: string, session?: string) => void;
+
+    static async selectGame(uri: string | null) {
         if (uri === null) {
             details.style.display = 'none';
             Launcher.selectedGame = null;
             return;
         }
 
-        supportStatus.style.display = "borg://exe/factorio" === uri ? "none" : null;
+        supportStatus.style.display = "borg://exe/factorio" === uri ? "none" : "";
         details.style.display = 'block';
         const game = Launcher.games[uri];
         titleUI.innerText = game.title;
@@ -40,6 +49,10 @@ export class Launcher {
             option.defaultSelected = offer.pc === preferred;
             gamePC.appendChild(option);
             const exe = GameID.tryGetExe(offer.Uri);
+            if (exe === null) {
+                console.warn("No executable found in game URI", offer.Uri);
+                continue;
+            }
             loadRunning(running, offer.pc, exe);
         }
         gamePC.disabled = game.offers.length < 2;
@@ -48,14 +61,14 @@ export class Launcher {
         Launcher.selectedGame = game;
     }
 
-    static initialize(games) {
+    static initialize(games: {[uri: string]: IMyGame}) {
         Launcher.games = games;
         gameList.addEventListener('change', gameSelected);
         launchButton.addEventListener('click', launchRequested)
     }
 }
 
-async function loadRunning(to, pc, exe) {
+async function loadRunning(to: Node, pc: string, exe: string) {
     const timeout = util.timeout(3000);
     const instances = Object.entries(await GameFS.getRunning(pc, exe, timeout));
 
@@ -84,7 +97,7 @@ async function loadRunning(to, pc, exe) {
         thumbnail.className = 'game-stream-thumbnail';
         const placeholder = "img/placeholder.png";
         if (info.hasOwnProperty('image')) {
-            thumbnail.src = info.image;
+            thumbnail.src = info.image!;
             thumbnail.onerror = () => {
                 if (thumbnail.src !== placeholder)
                     thumbnail.src = "img/placeholder.png";
@@ -109,39 +122,45 @@ async function loadRunning(to, pc, exe) {
     to.appendChild(pcUI);
 }
 
-function gameSelected(e) {
-    Launcher.selectGame(e.target.value);
+function gameSelected(e: Event) {
+    Launcher.selectGame(gameList.value);
 }
 
-function pcChanged(e) {
-    let offer = JSON.parse(e.target.options[e.target.selectedIndex].dataset.offer); 
+function pcChanged(e: Event) {
+    let offer = JSON.parse(gamePC.options[gamePC.selectedIndex].dataset.offer!); 
     localStorage.setItem('lastGamePC-' + offer.Uri, offer.pc);
 }
 
-function connectRequested(e) {
+function connectRequested(e: MouseEvent) {
     e.preventDefault();
-    Launcher.launch(e.currentTarget.dataset.pc, e.currentTarget.dataset.exe, e.currentTarget.dataset.session);
+    const button = <HTMLElement>e.currentTarget;
+    Launcher.launch(button.dataset.pc!, button.dataset.exe!, button.dataset.session);
 }
 
-function launchRequested(e) {
-    let offer = JSON.parse(gamePC.options[gamePC.selectedIndex].dataset.offer);
+function launchRequested(e: MouseEvent) {
+    let offer = JSON.parse(gamePC.options[gamePC.selectedIndex].dataset.offer!);
     const exe = GameID.tryGetExe(offer.Uri);
+    if (exe === null) {
+        alert("No executable found in game URI");
+        return;
+    }
     Launcher.launch(offer.pc, exe);
 }
 
-async function stopRequested(e) {
+async function stopRequested(e: Event) {
     e.preventDefault();
     e.stopImmediatePropagation();
-    const exe = e.target.dataset.exe;
-    const session = e.target.dataset.session;
-    const pc = e.target.dataset.pc;
-    const node = e.target.closest('fieldset');
+    const stop = <HTMLButtonElement>e.target;
+    const exe = stop.dataset.exe;
+    const session = stop.dataset.session;
+    const pc = stop.dataset.pc;
+    const node = stop.closest('fieldset')!;
     node.disabled = true;
 
     try {
-        await GameFS.stop(pc, exe, session);
+        await GameFS.stop(pc!, exe!, session!);
         try{
-            await GameFS.waitForStop(pc, exe, session, util.timeout(60000));
+            await GameFS.waitForStop(pc!, exe!, session!, util.timeout(60000));
         } catch (e){
             console.error(e);
         }

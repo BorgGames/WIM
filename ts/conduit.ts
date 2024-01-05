@@ -1,7 +1,7 @@
-import {Ephemeral} from "./ephemeral.js";
+import {Ephemeral, IBorgNode} from "./ephemeral.js";
 import {PubSub} from "./util.js";
-import {RTC} from "./streaming-client/src/rtc.js";
-import {timeout} from "./streaming-client/src/util.js";
+import {RTC} from "../js/streaming-client/built/rtc";
+import {timeout} from "../js/streaming-client/built/util.js";
 
 const jsonrpc = "2.0";
 const decoder = new TextDecoder();
@@ -10,16 +10,24 @@ const cert = await RTCPeerConnection.generateCertificate({
     hash: 'SHA-256',
     modulusLength: 2048,
     publicExponent: new Uint8Array([1, 0, 1])
-});
+} as RsaHashedKeyGenParams);
 
 export class ConduitService {
-    constructor(rtc, channel) {
+    channel: RTCDataChannel;
+    rtc: RTC;
+    events: PubSub;
+    private id: number;
+    private calls: {[id: number]: {call: any, resolve: any, reject: any, id: number}};
+    private expectedLength?: number;
+    private reconstructedMessage?: string;
+
+    constructor(rtc: RTC, channel: RTCDataChannel) {
         this.rtc = rtc;
         this.events = new PubSub();
         this.channel = channel;
-        this.channel.addEventListener('message', e => this.onResponse(e.data));
+        this.channel.addEventListener('message', (e: MessageEvent) => this.onResponse(e.data));
         this.channel.addEventListener('close', e => this.close('channel closed'));
-        this.rtc.rtc.addEventListener('connectionstatechange', e => {
+        this.rtc.rtc.addEventListener('connectionstatechange', (e: Event) => {
             switch (this.rtc.rtc.connectionState) {
             case "disconnected": case "failed": case "closed":
                 this.close(this.rtc.rtc.connectionState);
@@ -30,7 +38,7 @@ export class ConduitService {
         this.id = 0;
     }
 
-    onResponse(data) {
+    onResponse(data: any) {
         if (this.expectedLength && data.length < this.expectedLength) {
             console.error('ConduitService: incomplete response: ', data);
             return;
@@ -51,7 +59,7 @@ export class ConduitService {
                 return;
             }
 
-            this.expectedLength = null;
+            this.expectedLength = undefined;
         }
         // TODO: reconstruct msg if it's split
         let response = null;
@@ -70,9 +78,9 @@ export class ConduitService {
             call.resolve(response.result);
     }
 
-    call(method, params) {
+    call<T>(method: string, params: any[] | Record<string, any>) {
         const id = this.id++;
-        return new Promise((resolve, reject) => {
+        return new Promise<T>((resolve, reject) => {
             const call = {jsonrpc, id, method, params};
             this.calls[id] = {call, resolve, reject, id};
             let request = JSON.stringify(call);
@@ -81,13 +89,13 @@ export class ConduitService {
         });
     }
 
-    close(reason) {
+    close(reason: string) {
         this.events.publish('close', reason);
         console.debug('ConduitService.close', reason);
         this.rtc.close();
     }
 
-    static async connect(serviceName, verMin, verMax, cancel) {
+    static async connect(serviceName: string, verMin?: string, verMax?: string, cancel?: Promise<any>) {
         let cancelled = false;
         if (cancel)
             cancel.catch(() => cancelled = true);
@@ -110,7 +118,7 @@ export class ConduitService {
     }
 }
 
-async function _connect(serviceName, offer, cancel) {
+async function _connect(serviceName: string, offer: IBorgNode, cancel?: Promise<any>) {
     let cancelled = false;
     if (cancel)
         cancel.catch(() => cancelled = true);
@@ -123,19 +131,19 @@ async function _connect(serviceName, offer, cancel) {
 
     const cfg = signal.cfgDefaults({});
 
-    const onRTCCandidate = (candidate) => {
-        signal.sendCandidate(candidate);
+    const onRTCCandidate = (candidateJSON: string) => {
+        signal.sendCandidate(candidateJSON);
     };
 
-    return await new Promise(async (resolve, reject) => {
+    return await new Promise<ConduitService>(async (resolve, reject) => {
         const rtc = new RTC(serviceOffer, signal.getAttemptId(), onRTCCandidate, [], [cert]);
 
-        rtc.rtc.addEventListener('datachannel', async e => {
+        rtc.rtc.addEventListener('datachannel', async (e: RTCDataChannelEvent) => {
             const channel = e.channel;
             console.log("conduit datachannel", channel.label, channel.id, channel.readyState);
             resolve(new ConduitService(rtc, channel));
         });
-        rtc.rtc.addEventListener('connectionstatechange', e => {
+        rtc.rtc.addEventListener('connectionstatechange', (e: Event) => {
             console.log("conduit connectionstatechange", rtc.rtc.connectionState);
             switch (rtc.rtc.connectionState) {
                 case "disconnected": case "failed": case "closed":
@@ -147,7 +155,7 @@ async function _connect(serviceName, offer, cancel) {
 
         const myAnswer = await rtc.createAnswer();
 
-        signal.connect(cfg, sessionId, myAnswer, (candidate, theirCreds) => {
+        signal.connect(cfg, sessionId, myAnswer, (candidate: string, theirCreds: any) => {
             rtc.setRemoteCandidate(candidate, theirCreds);
         });
     });

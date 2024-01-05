@@ -1,13 +1,14 @@
 ﻿import {SYNC} from "../onedrive.js";
 import {ConduitService} from "../conduit.js";
-import {timeout} from "../streaming-client/src/util.js";
+import {timeout} from "../../js/streaming-client/built/util.js";
 import {showLoginDialog} from "../home.js";
 
+declare const QRCode: any;
 
-let licenseBlob = null;
-let instance = null;
+let licenseBlob: ISignedLicenseList | null = null;
+let instance: Promise<ConduitService | null> | null = null;
 
-export function login(host) {
+export function login(host?: string) {
     if (host === undefined)
         host = window.location.host;
     const hostUrl = `https://${host}`;
@@ -45,7 +46,8 @@ export async function getSignedLicenses() {
         if (response === null) {
             const stored = localStorage.getItem("STEAM_LICENSES");
             if (stored) {
-                licenseBlob = await saveLicenses(JSON.parse(stored));
+                licenseBlob = JSON.parse(stored);
+                await saveLicenses(licenseBlob!);
                 return licenseBlob;
             }
             return null;
@@ -62,7 +64,7 @@ export async function getSignedLicenses() {
     return licenseBlob;
 }
 
-export async function hasLicenseToAny(appIDs, packageIDs) {
+export async function hasLicenseToAny(appIDs: number[], packageIDs: number[]) {
     const blob = await getSignedLicenses();
     if (blob === null)
         return null;
@@ -86,17 +88,21 @@ export async function hasLicenseToAny(appIDs, packageIDs) {
     return false;
 }
 
-export async function onLogin() {
+export async function onLogin(): Promise<ISteamLicense[] | null> {
     const steam = await getSteam();
+    if (steam === null) {
+        console.warn('Steam login failed');
+        return null;
+    }
 
-    const openID = {};
+    const openID = <Record<string, string>>{};
 
     const currentUrl = new URL(window.location.href);
     const searchParams = currentUrl.searchParams;
     for (const key of [...searchParams.keys()]) {
         if (key.startsWith("openid.")) {
             console.debug(key.substring(7), searchParams.get(key));
-            openID[key.substring(7)] = searchParams.get(key);
+            openID[key.substring(7)] = searchParams.get(key)!;
             searchParams.delete(key);
         }
     }
@@ -105,29 +111,32 @@ export async function onLogin() {
 
     delete openID["mode"];
 
-    let result;
+    let result: ISignedLicenseList;
     try {
-        result = await steam.call('LoginWithOpenID', openID);
-    } catch (e) {
+        result = await steam.call<ISignedLicenseList>('LoginWithOpenID', openID);
+    } catch (e: any) {
         if (e.data.type === "System.InvalidOperationException") {
             alert("QR code login required.");
-            return;
+            return null;
         }
         console.error(e);
+        return null;
     }
 
     return await saveLicenses(result);
 }
 
-export async function loginWithQR(challengeURL) {
+export async function loginWithQR(challengeURL: string) {
     const steam = await getSteam();
-    const qrElement = document.getElementById('steam-qr');
+    if (steam === null)
+        throw new Error('Steam login failed');
+    const qrElement = document.getElementById('steam-qr')!;
     const steamQR = new QRCode(qrElement, 'https://borg.games');
     steamQR.makeCode(challengeURL);
-    let result = null;
+    let result: ILoginResponse | null = null;
     while (true) {
         try {
-            result = await steam.call('LoginWithQR', [challengeURL]);
+            result = await steam.call<ILoginResponse>('LoginWithQR', [challengeURL]);
             if (result.ChallengeURL) {
                 challengeURL = result.ChallengeURL;
                 qrElement.style.opacity = "1";
@@ -138,13 +147,13 @@ export async function loginWithQR(challengeURL) {
                     if (!await showLoginDialog(true))
                         window.location.reload();
                 }
-                return await saveLicenses(result.Licenses);
+                return await saveLicenses(result.Licenses!);
             }
-        } catch (e) {
+        } catch (e: any) {
             const err = e.data ?? e;
             if (err.type === "System.Runtime.InteropServices.ExternalException") {
                 if (err.message.includes("TryAnotherCM")) {
-                    challengeURL = null;
+                    challengeURL = null!;
                     qrElement.style.opacity = "0.5";
                     continue;
                 }
@@ -156,7 +165,7 @@ export async function loginWithQR(challengeURL) {
     }
 }
 
-export async function saveLicenses(signedLicenseList) {
+async function saveLicenses(signedLicenseList: ISignedLicenseList): Promise<ISteamLicense[]> {
     const licenses = JSON.parse(atob(signedLicenseList.LicensesUtf8));
 
     const saveResponse = await SYNC.makeRequest('special/approot:/Games/Steam.json:/content', {
@@ -172,4 +181,19 @@ export async function saveLicenses(signedLicenseList) {
     localStorage.removeItem("STEAM_LICENSES");
 
     return licenses;
+}
+
+export interface ISteamLicense {
+    AppID?: number;
+    PackageID?: number;
+}
+
+interface ISignedLicenseList {
+    LicensesUtf8: string;
+    Signature: string;
+}
+
+interface ILoginResponse {
+    Licenses?: ISignedLicenseList;
+    ChallengeURL?: string;
 }

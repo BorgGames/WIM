@@ -8,7 +8,7 @@ const AUTH_ENDPOINT = devMode()
 const TOKENS_URL = 'special/approot:/Stores/gog-tokens.json';
 
 export async function getToken() {
-    let tokens = JSON.parse(localStorage.getItem('gog-tokens'));
+    let tokens = JSON.parse(localStorage.getItem('gog-tokens')!);
 
     if (tokens === null) {
         const response = await SYNC.download(TOKENS_URL);

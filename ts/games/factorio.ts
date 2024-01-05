@@ -10,8 +10,8 @@ export const APP_ID = 427520;
 export const LOCAL_DATA = "Games/Factorio";
 const LOCAL_DATA_URL = `special/approot:/${LOCAL_DATA}`;
 const PLAYER_DATA_URL = LOCAL_DATA_URL + "/player-data.json";
-const playFull = document.getElementById('factorio');
-const loginContainer = document.getElementById('factorio-login-container');
+const playFull = <HTMLButtonElement>document.getElementById('factorio');
+const loginContainer = document.getElementById('factorio-login-container')!;
 
 async function getPlayerData() {
     const response = await SYNC.download(PLAYER_DATA_URL);
@@ -41,20 +41,20 @@ export async function loginRequired() {
     return !await promiseOr([creds, steam]);
 }
 
-let loginCheck = null;
+let loginCheck: Promise<boolean> | null = null;
 
-const playFactorio = document.getElementById('factorio-play');
+const playFactorio = document.getElementById('factorio-play')!;
 playFactorio.addEventListener('click', expand);
 
 export async function expand() {
     playFactorio.style.display = 'none';
-    document.getElementById('factorio-login').style.display = 'inline-block';
+    document.getElementById('factorio-login')!.style.display = 'inline-block';
     const needsLogin = await checkLogin();
     if (needsLogin) {
         const steam = await Steam.getSteam();
         console.log('conduit connected. querying about Steam...');
         try {
-            const result = await steam.call('LoginWithQR', [null]);
+            const result: any = await steam!.call('LoginWithQR', [null]);
             if (await Steam.loginWithQR(result.ChallengeURL))
                 if (await checkLogin()) 
                     alert("You don't have Factorio on Steam, login with username and password instead");
@@ -84,9 +84,9 @@ async function checkLogin() {
     return result;
 }
 
-const modeSwitch = document.getElementById('mode-switch');
+const modeSwitch = document.getElementById('mode-switch')!;
 modeSwitch.addEventListener('click', e => switchLoginMode(e));
-function switchLoginMode(e) {
+function switchLoginMode(e: MouseEvent) {
     e?.preventDefault();
 
     const mode = modeSwitch.dataset['mode'] === 'steam' ? 'password' : 'steam';

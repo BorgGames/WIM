@@ -12,7 +12,7 @@ export async function updateIceServers() {
     localStorage.setItem('iceServers', await response.text());
 }
 
-export function getConnectionType(rtc) {
+export function getConnectionType(rtc: RTCPeerConnection) {
     const receivers = rtc.getReceivers();
     for (const receiver of receivers) {
         if (receiver.track.kind !== "video" || !receiver.transport)
@@ -22,11 +22,11 @@ export function getConnectionType(rtc) {
         if (pair === null)
             continue;
 
-        for (const candidate of [pair.local, pair.remote]) {
+        for (const candidate of [pair.local!, pair.remote!]) {
             if (candidate.type === "relay")
                 return "relay";
         }
-        return pair.local.type;
+        return pair.local!.type;
     }
 
     return "unknown";

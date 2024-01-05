@@ -1,10 +1,23 @@
-﻿import { wait } from "./streaming-client/src/util.js";
+﻿import { wait } from "../js/streaming-client/built/util.js";
 import { devMode } from "./dev.js";
 
 const API = devMode() ? 'https://localhost:7173/ephemeral/' : "https://borg-ephemeral.azurewebsites.net/ephemeral/";
 
+export interface IBorgNode {
+    session_id: string;
+    /** JSON stringified RTCSessionDescription */
+    peer_connection_offer: string;
+}
+
 export class Ephemeral {
-    async connect(cfg, sessionId, answer, onCandidate) {
+    sessionId?: string;
+    secret?: string;
+    endpoint: string;
+    stopCode: number;
+    answer?: RTCLocalSessionDescriptionInit;
+    private onCandidate: any;
+
+    async connect(cfg: any, sessionId: string, answer: RTCLocalSessionDescriptionInit, onCandidate: any) {
         this.onCandidate = onCandidate;
         this.sessionId = sessionId;
         this.answer = answer;
@@ -17,9 +30,7 @@ export class Ephemeral {
     }
 
     async submitAnswer() {
-        const headers = {'Content-Type': 'text/plain'};
-        if (this.secret)
-            headers.Secret = this.secret;
+        const headers = this.makeHeaders();
         const response = await fetch(this.endpoint + this.sessionId + '/answer', {
             method: 'PUT',
             headers: headers,
@@ -30,27 +41,27 @@ export class Ephemeral {
             throw new Error('Failed to submit answer');
     }
 
-    async sendCandidate(candidate) {
-        const headers = {'Content-Type': 'text/plain'};
-        if (this.secret)
-            headers.Secret = this.secret;
+    async sendCandidate(candidateJSON: string) {
+        const headers = this.makeHeaders();
         const response = await fetch(this.endpoint + this.sessionId + '/answerIce', {
             method: 'PUT',
             headers: headers,
-            body: candidate
+            body: candidateJSON
         });
 
         if (!response.ok)
             throw new Error('Failed to submit ICE candidate');
     }
 
-    static async getNodes(endpoint, secret, verMin, verMax) {
+    static async getNodes(endpoint?: string | null, secret?: string | null,
+                          verMin?: string, verMax?: string,
+                          cancel?: any): Promise<IBorgNode[]> {
         endpoint = endpoint || API;
-        const options = {};
+        const options: RequestInit = {};
         if (secret)
             options.headers = {'Secret': secret};
         let uri = endpoint + 'offers';
-        const search = {};
+        const search = <Record<string, string>>{};
         if (verMin !== undefined)
             search.verMin = verMin;
         if (verMax !== undefined)
@@ -67,7 +78,7 @@ export class Ephemeral {
 
     async fetchCandidates() {
         const seen = new Set();
-        const options = {};
+        const options: RequestInit = {};
         if (this.secret)
             options.headers = {'Secret': this.secret};
         while (this.stopCode === 0) {
@@ -95,24 +106,31 @@ export class Ephemeral {
         }
     }
 
-    cfgDefaults(cfg) {
+    cfgDefaults(cfg: any) {
         if (!cfg) cfg = {};
         return structuredClone(cfg);
     }
 
     getAttemptId() {
         console.warn('getAttemptId stub');
-        return 41;
+        return "41";
     }
 
-    constructor(endpoint, secret) {
+    private makeHeaders() {
+        const headers: { 'Content-Type': string, Secret?: string } = { 'Content-Type': 'text/plain' };
+        if (this.secret)
+            headers.Secret = this.secret;
+        return headers;
+    }
+
+    constructor(endpoint?: string | null, secret?: string | null) {
         this.endpoint = endpoint || API;
         if (secret)
             this.secret = secret;
         this.stopCode = 0;
     }
 
-    close(code) {
+    close(code: number) {
         this.stopCode = code;
     }
 }

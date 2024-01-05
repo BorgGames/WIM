@@ -1,8 +1,13 @@
 import {MY} from "./onedrive.js";
-import {wait} from "./streaming-client/src/util.js";
+import {wait} from "../js/streaming-client/built/util.js";
+
+export interface IRunningGame {
+    image?: string;
+    running?: boolean;
+}
 
 export class OneDriveRunningGames {
-    static async launch(pc, gameID, sessionID, timeout) {
+    static async launch(pc: string, gameID: string, sessionID: string, timeout: Promise<any>) {
         let cancelled = false;
         timeout.catch(() => cancelled = true);
         const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
@@ -16,9 +21,9 @@ export class OneDriveRunningGames {
         if (response.status !== 201)
             throw new Error('Failed to request game launch');
 
-        var result = null;
+        var result: string | null = null;
         let shouldCancel = () => !!result || cancelled;
-        let restartDelay = async (link) => {
+        let restartDelay = async (link: any) => {
             await wait(5000);
             return link;
         };
@@ -45,18 +50,18 @@ export class OneDriveRunningGames {
         return result;
     }
 
-    static async isRunning(pc, gameID, sessionID, timeout) {
+    static async isRunning(pc: string, gameID: string, sessionID: string, timeout: Promise<any>) {
         const running = await OneDriveRunningGames.getRunning(pc, gameID, timeout);
         return running && running.hasOwnProperty(sessionID);
     }
 
-    static async assertRunning(pc, gameID, sessionID, timeout) {
+    static async assertRunning(pc: string, gameID: string, sessionID: string, timeout: Promise<any>) {
         const isRunning = await OneDriveRunningGames.isRunning(pc, gameID, sessionID, timeout);
         if (!isRunning)
             throw new Error('Game exited');
     }
 
-    static async getRunning(pc, gameID, timeout) {
+    static async getRunning(pc: string, gameID: string, timeout: Promise<any>) {
         if (gameID.indexOf('/') !== -1)
             throw new Error('Invalid game ID: ' + gameID);
         let cancelled = false;
@@ -72,9 +77,9 @@ export class OneDriveRunningGames {
             throw new Error('Failed to request game launch');
 
         const items = await response.json();
-        const result = {};
+        const result = <Record<string, IRunningGame>>{};
         for (const item of items.value) {
-            const session = item.name.substring(0, item.name.lastIndexOf('.'));
+            const session: string = item.name.substring(0, item.name.lastIndexOf('.'));
             if (!result.hasOwnProperty(session))
                 result[session] = {};
             if (item.name.endsWith('.jpg'))
@@ -89,7 +94,7 @@ export class OneDriveRunningGames {
         return result;
     }
 
-    static async stop(pc, gameID, sessionID) {
+    static async stop(pc: string, gameID: string, sessionID: string) {
         const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
         const sessionPath = gamePath + '/' + sessionID;
         const response = await MY.makeRequest(sessionPath + '.game', {
@@ -100,7 +105,7 @@ export class OneDriveRunningGames {
             throw new Error('Failed to request game stop');
     }
     
-    static async waitForStop(pc, gameID, sessionID, timeout) {
+    static async waitForStop(pc: string, gameID: string, sessionID: string, timeout: Promise<any>) {
         const gamePath = 'special/approot:/PCs/' + pc + '/running/' + gameID;
 
         let cancelled = false;

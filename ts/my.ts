@@ -1,10 +1,15 @@
 import { MY as OneDrive } from "./onedrive.js";
 import { GameID } from "./gid.js";
 
-export class Games {
-    static games = {};
+interface IMyGame {
+    title: string;
+    offers: any[];
 }
-export async function getGames(pc, list) {
+
+export class Games {
+    static games: Record<string, IMyGame> = {};
+}
+export async function getGames(pc: string, list: HTMLSelectElement) {
     let json = null;
     try {
         json = await OneDrive.download(`special/approot:/PCs/${pc}.games.json`);

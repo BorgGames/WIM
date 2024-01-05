@@ -1,13 +1,13 @@
-﻿import {AudioPlayer} from './streaming-client/src/audio.js';
-import {unpack} from "./streaming-client/src/msg.js";
-import {Msg} from "./streaming-client/src/enum.js";
+﻿import {AudioPlayer} from '../js/streaming-client/built/audio.js';
+import {unpack} from "../js/streaming-client/built/msg.js";
+import {Msg} from "../js/streaming-client/built/enum.js";
 
-AudioPlayer.OPUS_WASM = '/js/streaming-client/src/wasm/opus.wasm';
+AudioPlayer.OPUS_WASM = '/js/streaming-client/built/wasm/opus.wasm';
 
 export class Session {
-    static async waitForCommandRequest(channel) {
-        return new Promise((resolve, reject) => {
-            function listener(event) {
+    static async waitForCommandRequest(channel: RTCDataChannel) {
+        return new Promise<void>((resolve, reject) => {
+            function listener(event: MessageEvent<ArrayBuffer>) {
                 channel.removeEventListener('message', listener);
                 if (event.data.byteLength !== 1) {
                     try {

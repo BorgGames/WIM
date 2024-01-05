@@ -1,13 +1,13 @@
-export async function getNetworkStatistics(channel) {
+export async function getNetworkStatistics(channel: RTCDataChannel) {
 	const warmup = 4;
 	const samples = 10;
 
 	const decoder = new TextDecoder();
 
 	// wait for warmup pings to return
-	const warmupRoundtrip = new Promise((resolve, reject) => {
+	const warmupRoundtrip = new Promise<void>((resolve, reject) => {
 		let count = 0;
-		function warmupListener(event) {
+		function warmupListener(event: MessageEvent<ArrayBuffer>) {
 			if (event.data.byteLength != 4 || decoder.decode(event.data) !== 'ping') {
 				reject("bad echo");
 				return;
@@ -29,13 +29,13 @@ export async function getNetworkStatistics(channel) {
 	await warmupRoundtrip;
 
 	const result = {
-		roundtrip_times: [],
+		roundtrip_times: new Array<number>(),
 	};
 	for (let i = 0; i < samples; i++) {
 		// generate random 4 character message
 		const message = Math.random().toString(36).substring(2, 6);
-		const roundtrip = new Promise((resolve, reject) => {
-			function responseListener(event) {
+		const roundtrip = new Promise<number>((resolve, reject) => {
+			function responseListener(event: MessageEvent<ArrayBuffer>) {
 				const end = performance.now();
 				channel.removeEventListener('message', responseListener);
 				if (event.data.byteLength === message.length || decoder.decode(event.data) === message) {

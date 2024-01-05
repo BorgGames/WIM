@@ -1,4 +1,9 @@
-﻿export class CancellationToken {
+﻿export interface ICancellationTokenSource {
+    cancel(): void;
+}
+export class CancellationToken {
+    canceled: boolean;
+
     constructor() {
         this.canceled = false;
     }
@@ -9,21 +14,23 @@
 }
 
 export class PubSub {
+    subs: {[channel: string]: ((...args: any[]) => void)[]};
+
     constructor() {
         this.subs = {}
     }
 
-    subscribe(channel, sub) {
+    subscribe(channel: string, sub: any) {
         this.subs[channel] = this.subs[channel] || [];
         this.subs[channel].push(sub);
     }
 
-    publish(channel, ...args) {
+    publish(channel: string, ...args: any[]) {
         (this.subs[channel] || []).forEach(sub => sub(...args));
     }
 }
 
-export async function promiseOr(promises, cancelRace) {
+export async function promiseOr(promises: Promise<any>[], cancelRace?: any) {
     return new Promise((resolve, reject) => {
         let completed = 0;
         const total = promises.length;

@@ -1,13 +1,13 @@
-﻿import * as util from "./streaming-client/src/util.js";
+﻿import * as util from "../js/streaming-client/built/util.js";
 import * as GOG from "./auth/gog.js";
 import * as Factorio from './games/factorio.js';
 import * as Minecraft from "./games/mc.js";
-import * as Msg from './streaming-client/src/msg.js';
+import * as Msg from '../js/streaming-client/built/msg.js';
 import * as Steam from "./auth/steam.js";
 
-import {Client} from './streaming-client/src/client.js';
+import {Client, IExitEvent} from '../js/streaming-client/built/client.js';
 import {ClientAPI} from "./client-api.js";
-import {Ephemeral} from "./ephemeral.js";
+import {Ephemeral, IBorgNode} from "./ephemeral.js";
 import {OneDrivePersistence} from "./drive-persistence.js";
 import {Session} from "./session.js";
 
@@ -17,19 +17,19 @@ import {SYNC} from "./onedrive.js";
 import {notify} from "./notifications.js";
 
 const clientApi = new ClientAPI();
-const status = document.getElementById('game-status');
-const videoContainer = document.querySelector('.video-container');
-const video = document.getElementById('stream');
-const videoBitrate = document.getElementById('video-bitrate');
+const status = document.getElementById('game-status')!;
+const videoContainer = document.querySelector('.video-container')!;
+const video = <HTMLVideoElement>document.getElementById('stream')!;
+const videoBitrate = <HTMLInputElement>document.getElementById('video-bitrate');
 
 const NETWORK = null;
 
-let controlChannel = null;
+let controlChannel: RTCDataChannel | null = null;
 
-const resume = document.getElementById('video-resume');
+const resume = document.getElementById('video-resume')!;
 resume.onclick = () => video.play();
 
-const mcLoginDialog = document.getElementById('mc-login-dialog');
+const mcLoginDialog = document.getElementById('mc-login-dialog')!;
 const modeSwitch = document.getElementById('mode-switch');
 const inviteButtons = document.querySelectorAll('button.invite');
 const inviteText = 'Join Borg P2P Cloud Gaming network to play remotely or rent your PC out.' +
@@ -49,7 +49,7 @@ const emailInvite = "mailto:"
 
 export class Home {
     static async init() {
-        const steamLogin = document.getElementById('steam-login');
+        const steamLogin = document.getElementById('steam-login')!;
         steamLogin.addEventListener('click', () => Steam.login());
 
         const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -71,21 +71,22 @@ export class Home {
         }
 
         function changeBitrate() {
-            const short = videoBitrate.value < 4 ? "low"
-                : videoBitrate.value < 8 ? "medium"
-                    : videoBitrate.value < 12 ? "high"
+            const value = +videoBitrate.value;
+            const short = value < 4 ? "low"
+                : value < 8 ? "medium"
+                    : value < 12 ? "high"
                         : "ultra";
-            const qualityText = document.getElementById('video-quality');
+            const qualityText = document.getElementById('video-quality')!;
             qualityText.innerText = videoBitrate.title = `${short} - ${videoBitrate.value} Mbps`;
             localStorage.setItem('encoder_bitrate', videoBitrate.value);
             if (controlChannel)
-                controlChannel.send(Msg.config({encoder_bitrate: +videoBitrate.value}));
+                controlChannel.send(Msg.config({encoder_bitrate: value}));
         }
 
-        videoBitrate.value = parseInt(localStorage.getItem('encoder_bitrate')) || 2;
+        videoBitrate.value = String(parseInt(localStorage.getItem('encoder_bitrate')!) || 2);
         changeBitrate();
 
-        const loginButton = document.getElementById('loginButton');
+        const loginButton = <HTMLButtonElement>document.getElementById('loginButton');
         loginButton.addEventListener('click', () => {
             Home.login(true);
         });
@@ -99,7 +100,7 @@ export class Home {
             await handleSteamLogin();
     }
 
-    static async login(loud) {
+    static async login(loud?: boolean) {
         let token;
         try {
             token = await SYNC.login(loud);
@@ -122,7 +123,7 @@ export class Home {
             return;
         }
         const items = await response.json();
-        const progress = document.getElementById('space');
+        const progress = <HTMLProgressElement>document.getElementById('space')!;
         progress.max = items.quota.total;
         progress.value = items.quota.used;
         const GB = 1024 * 1024 * 1024;
@@ -135,13 +136,14 @@ export class Home {
         document.body.classList.remove('sync-pending');
     }
 
-    static runClient(nodes, persistenceID, config, timeout) {
-        const signalFactory = (onFatal) => new Ephemeral(null, NETWORK);
+    static runClient(nodes: IBorgNode[], persistenceID: string | null | undefined,
+                     config: ILaunchConfig, timeout: Promise<any>) {
+        const signalFactory = (_: any) => new Ephemeral(null, NETWORK);
 
         return new Promise(async (resolve) => {
-            const clients = [];
+            const clients = new Array<Client>();
 
-            function killOthers(current) {
+            function killOthers(current: Client) {
                 for (let j = 0; j < clients.length; j++) {
                     if (clients[j] !== current)
                         clients[j].destroy(Client.StopCodes.CONCURRENT_SESSION);
@@ -160,27 +162,29 @@ export class Home {
 
                     switch (event.type) {
                         case 'exit':
+                            const exitCode = (event as IExitEvent).code;
                             document.removeEventListener('keydown', hotkeys, true);
-                            if (event.code !== Client.StopCodes.CONCURRENT_SESSION)
-                                resolve(event.code);
+                            if (exitCode !== Client.StopCodes.CONCURRENT_SESSION)
+                                resolve(exitCode);
                             else
                                 clients.removeByValue(client);
                             break;
                         case 'status':
                             if (client.exitCode === Client.StopCodes.CONCURRENT_SESSION)
                                 break;
-                            status.innerText = event.msg.str;
-                            console.log(i, event.msg.str);
-                            const resumeRequired = event.msg.str === 'video suspend';
+                            const str = event.msg!.str!;
+                            status.innerText = str;
+                            console.log(i, str);
+                            const resumeRequired = str === 'video suspend';
                             resume.style.display = resumeRequired ? 'inline-block' : 'none';
                             if (resumeRequired)
                                 video.autoplay = false;
                             break;
                         case 'chat':
-                            notify(event.msg.str, 30000);
+                            notify(event.msg!.str!, 30000);
                             break;
                     }
-                }, async (name, channel) => {
+                }, async (name: string, channel: RTCDataChannel) => {
                     switch (name) {
                         case 'control':
                             await Session.waitForCommandRequest(channel);
@@ -207,9 +211,11 @@ export class Home {
                             controlChannel = channel;
                             break;
                         case 'persistence':
-                            if (SYNC.isLoggedIn()) {
+                            if (SYNC.isLoggedIn() && persistenceID) {
                                 const persistence = new OneDrivePersistence(channel, [persistenceID]);
                                 console.log('persistence enabled');
+                            } else {
+                                console.warn('persistence not available');
                             }
                             break;
                     }
@@ -217,7 +223,7 @@ export class Home {
                 clients.push(client);
 
                 //set up useful hotkeys that call client methods: destroy can also be used to cancel pending connection
-                const hotkeys = (event) => {
+                const hotkeys = (event: KeyboardEvent) => {
                     event.preventDefault();
 
                     if (event.code === 'Backquote' && event.ctrlKey && event.altKey) {
@@ -225,7 +231,7 @@ export class Home {
                     } else if (event.code === 'Enter' && event.ctrlKey && event.altKey) {
                         util.toggleFullscreen(client.element);
                     } else if (event.code === 'Slash' && event.ctrlKey && event.altKey) {
-                        document.getElementById('video-resolution').innerText = `${video.videoWidth} x ${video.videoHeight}`;
+                        document.getElementById('video-resolution')!.innerText = `${video.videoWidth} x ${video.videoHeight}`;
                         document.body.classList.toggle('video-overlay');
                     }
                 };
@@ -236,7 +242,7 @@ export class Home {
                         const info = JSON.parse(offer.peer_connection_offer);
                         const sdp = JSON.parse(info.Offer);
 
-                        const encoder_bitrate = parseInt(localStorage.getItem('encoder_bitrate')) || 2;
+                        const encoder_bitrate = parseInt(localStorage.getItem('encoder_bitrate')!) || 2;
 
                         await Promise.race([
                             timeout,
@@ -254,7 +260,7 @@ export class Home {
         });
     }
 
-    static async launch(config) {
+    static async launch(config: ILaunchConfig) {
         const timeout = util.timeout(1000 /*s*/ * 60 /*m*/ * 3);
 
         try {
@@ -273,7 +279,7 @@ export class Home {
 
             document.body.classList.add('video');
 
-            let persistenceID = undefined;
+            let persistenceID: string | undefined = undefined;
             if (SYNC.isLoggedIn())
                 persistenceID = await ensureSyncFolders(gameName);
 
@@ -333,18 +339,22 @@ async function handleSteamLogin() {
         if (!await showLoginDialog())
             return;
     const licenses = await Steam.onLogin();
-    const factorioLicense = licenses.find(l => l.AppID === Factorio.APP_ID || Factorio.REPRESENTATIVE_PACKAGE_IDS.includes(l.PackageID));
+    if (licenses === null) {
+        alert("Steam login failed.");
+        return;
+    }
+    const factorioLicense = licenses.find(l => l.AppID === Factorio.APP_ID || Factorio.REPRESENTATIVE_PACKAGE_IDS.includes(l.PackageID!));
     Factorio.expand();
     if (!factorioLicense)
         alert("Factorio license not found.");
 }
 
-export async function showLoginDialog(disableCancel) {
-    const dialog = document.getElementById('login-dialog');
-    const cancel = document.getElementById('cancelLogin');
+export async function showLoginDialog(disableCancel?: boolean) {
+    const dialog = document.getElementById('login-dialog')!;
+    const cancel = document.getElementById('cancelLogin')!;
     cancel.style.display = !!disableCancel ? 'none' : 'inline-block';
     dialog.style.display = 'flex';
-    const promise = new Promise(async (resolve) => {
+    const promise = new Promise<boolean>(async (resolve) => {
         const doLogin = async () => {
             try {
                 resolve(await Home.login(true));
@@ -354,23 +364,24 @@ export async function showLoginDialog(disableCancel) {
         };
         // if (SYNC.account)
         //     await doLogin();
-        document.getElementById('onedriveLogin').onclick = doLogin;
+        document.getElementById('onedriveLogin')!.onclick = doLogin;
         cancel.onclick = () => resolve(false);
     });
     try {
-        await promise;
+        return await promise;
     } finally {
         dialog.style.display = 'none';
     }
 }
 
-function showMinecraftLogin(login) {
-    document.getElementById('mc-code').innerText = login.code;
-    document.getElementById('mc-login-link').href = login.location;
+function showMinecraftLogin(login: Minecraft.IMinecraftLoginInit) {
+    document.getElementById('mc-code')!.innerText = login.code;
+    const loginLink = <HTMLAnchorElement>document.getElementById('mc-login-link');
+    loginLink.href = login.location;
     mcLoginDialog.style.display = 'flex';
 }
 
-async function ensureSyncFolders(game) {
+async function ensureSyncFolders(game: string): Promise<string> {
     const url = 'special/approot:/Games/' + game;
     let response = await SYNC.makeRequest(url, {
         method: 'PUT',
@@ -393,4 +404,11 @@ function safariHack() {
     if (!controlChannel) return;
 
     controlChannel.send(Msg.reinit());
+}
+
+interface ILaunchConfig {
+    game: string;
+    nodeMin: string;
+    nodeMax: string;
+    sessionId?: string;
 }

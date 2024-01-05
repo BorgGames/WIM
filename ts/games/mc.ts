@@ -5,14 +5,19 @@ export const LOCAL_DATA = "Games/Minecraft";
 const LOCAL_DATA_URL = `special/approot:/${LOCAL_DATA}`;
 const CREDS_URL = LOCAL_DATA_URL + "/cml-creds.json";
 
-export async function beginLogin() {
+export interface IMinecraftLoginInit {
+    code: string;
+    location: string;
+}
+
+export async function beginLogin(): Promise<IMinecraftLoginInit> {
     const response = await fetch(AUTH_ENDPOINT + 'login', {method: 'POST'});
     const code = await response.text();
-    const location = response.headers.get('Location');
+    const location = response.headers.get('Location')!;
     return {code, location};
 }
 
-export async function completeLogin(code) {
+export async function completeLogin(code: string) {
     const completionUrl = AUTH_ENDPOINT + 'await/' + encodeURIComponent(code);
     const completion = await fetch(completionUrl, {method: 'POST'});
     if (!completion.ok) {
@@ -58,7 +63,7 @@ export async function loginRequired() {
     }
 }
 
-async function getProfile(accessToken) {
+async function getProfile(accessToken: string) {
     const profileUrl = AUTH_ENDPOINT + 'check/' + encodeURIComponent(accessToken);
     const profile = await fetch(profileUrl, {method: 'POST'});
     return await profile.json();

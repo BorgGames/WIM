@@ -1,8 +1,8 @@
-﻿import {wait} from "./streaming-client/src/util.js";
+﻿import {wait} from "../js/streaming-client/built/util.js";
 
-const container = document.getElementById('notifications');
+const container = <Node>document.getElementById('notifications');
 
-export async function notify(message, timeout_ms) {
+export async function notify(message: string, timeout_ms?: number) {
     const notification = document.createElement('div');
     notification.className = 'notification';
     notification.textContent = message;

@@ -1,5 +1,5 @@
 import * as ms from './auth/ms.js';
-import {wait} from "./streaming-client/src/util.js";
+import {wait} from "../js/streaming-client/built/util.js";
 
 const driveUrl = 'https://graph.microsoft.com/v1.0/me/drive/';
 const scopes = ['user.read', 'files.readwrite.appfolder'];
@@ -8,13 +8,14 @@ export class OneDrive {
     clientID;
     auth;
     accessToken = null;
+    account: any;
 
-    constructor(clientID) {
+    constructor(clientID: string) {
         this.clientID = clientID;
         this.auth = ms.makeApp(clientID);
     }
 
-    async makeRequest(url, options) {
+    async makeRequest(url: string, options?: RequestInit) {
         if (!this.accessToken) throw new Error(NOT_LOGGED_IN);
         
         try {
@@ -24,8 +25,8 @@ export class OneDrive {
         }
 
         if (!options) options = {};
-        options.headers = options.headers || {};
-        options.headers['Authorization'] = 'Bearer ' + this.accessToken;
+        options.headers = new Headers(options.headers);
+        options.headers.set('Authorization', 'Bearer ' + this.accessToken);
         if (!url.startsWith('https://'))
             url = driveUrl + url;
         let triedLogin = false;
@@ -35,7 +36,7 @@ export class OneDrive {
             switch (result.status) {
                 case 503: case 429:
                     const defaultDelayS = Math.random() * 0.3 + 0.3;
-                    const retryS = parseInt(result.headers.get('Retry-After')) || defaultDelayS;
+                    const retryS = parseInt(result.headers.get('Retry-After')!) || defaultDelayS;
                     console.warn('Retry after, sec: ', retryS);
                     await wait(retryS * 1000);
                     continue;
@@ -51,7 +52,7 @@ export class OneDrive {
         }
     }
 
-    async download(url) {
+    async download(url: string) {
         // workaround for https://github.com/microsoftgraph/msgraph-sdk-javascript/issues/388
         if (url.endsWith(':/content'))
             throw new RangeError();
@@ -65,8 +66,8 @@ export class OneDrive {
         return await fetch(realUrl);
     }
 
-    async login(loud) {
-        const partial = {};
+    async login(loud?: boolean) {
+        const partial = { account: null };
         const token = await ms.login(this.auth, scopes, loud, partial);
         this.account = partial.account;
         if (!token) return false;
@@ -96,7 +97,10 @@ export class OneDrive {
         }
     }
 
-    async deltaStream(resource, handler, restartDelay, shouldCancel) {
+    async deltaStream(resource: string,
+                      handler: (item: any) => Promise<void>,
+                      restartDelay: (v: string) => Promise<string>,
+                      shouldCancel: () => boolean) {
         let link = resource + ':/delta';
         while (!shouldCancel()) {
             const response = await this.makeRequest(link);

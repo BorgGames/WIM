@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "ES2022",
+    "allowJs": true,
+    "outDir": "js",
+    "sourceMap": true,
+    "strict": true
+  },
+  "references": [
+    {
+      "path": "js/streaming-client"
+    }
+  ],
+  "include": [
+    "ts/*"
+  ]
+}
