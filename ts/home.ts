@@ -224,6 +224,10 @@ export class Home {
 
                 //set up useful hotkeys that call client methods: destroy can also be used to cancel pending connection
                 const hotkeys = (event: KeyboardEvent) => {
+                    if (client.exited()) {
+                        document.removeEventListener('keydown', hotkeys, true);
+                        return;
+                    }
                     event.preventDefault();
 
                     if (event.code === 'Backquote' && event.ctrlKey && event.altKey) {
