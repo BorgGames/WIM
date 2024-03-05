@@ -73,8 +73,8 @@ export class Home {
         function changeBitrate() {
             const value = +videoBitrate.value;
             const short = value < 4 ? "low"
-                : value < 8 ? "medium"
-                    : value < 12 ? "high"
+                : value < 12 ? "medium"
+                    : value < 20 ? "high"
                         : "ultra";
             const qualityText = document.getElementById('video-quality')!;
             qualityText.innerText = videoBitrate.title = `${short} - ${videoBitrate.value} Mbps`;
