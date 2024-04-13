@@ -156,6 +156,7 @@ export class Home {
 
             for (let i = 0; i < nodes.length; i++) {
                 const offer = nodes[i];
+                let stall = 0;
                 //set up client object with an event callback: gets connect, status, chat, and shutter events
                 const client = new Client(clientApi, signalFactory, videoContainer, (event) => {
                     console.log('EVENT', i, event);
@@ -168,6 +169,21 @@ export class Home {
                                 resolve(exitCode);
                             else
                                 clients.removeByValue(client);
+                            break;
+                        case 'stall':
+                            if (stall !== 0) break;
+                            stall = setTimeout(() => {
+                                if (!client.exited())
+                                    client.destroy(Client.StopCodes.CONNECTION_TIMEOUT);
+                            }, 30000);
+                            console.debug('stall started: ', stall);
+                            break;
+                        case 'frame':
+                            if (stall !== 0) {
+                                console.debug('stall cleared: ' + stall);
+                                clearTimeout(stall);
+                                stall = 0;
+                            }
                             break;
                         case 'status':
                             if (client.exitCode === Client.StopCodes.CONCURRENT_SESSION)
