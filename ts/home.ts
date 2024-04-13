@@ -157,12 +157,15 @@ export class Home {
             for (let i = 0; i < nodes.length; i++) {
                 const offer = nodes[i];
                 let stall = 0;
+                let auth: GOG.GogAuth | null = null;
                 //set up client object with an event callback: gets connect, status, chat, and shutter events
                 const client = new Client(clientApi, signalFactory, videoContainer, (event) => {
                     console.log('EVENT', i, event);
 
                     switch (event.type) {
                         case 'exit':
+                            if (auth !== null)
+                                auth.destroy();
                             const exitCode = (event as IExitEvent).code;
                             document.removeEventListener('keydown', hotkeys, true);
                             if (exitCode !== Client.StopCodes.CONCURRENT_SESSION)
@@ -232,6 +235,14 @@ export class Home {
                                 console.log('persistence enabled');
                             } else {
                                 console.warn('persistence not available');
+                            }
+                            break;
+                        case 'auth':
+                            if (SYNC.isLoggedIn()) {
+                                auth = new GOG.GogAuth(channel, config.game);
+                                console.log('auth enabled');
+                            } else {
+                                console.warn('auth not available');
                             }
                             break;
                     }

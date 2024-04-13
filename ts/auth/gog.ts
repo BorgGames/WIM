@@ -31,7 +31,8 @@ export async function getToken() {
             let error = "";
             try {
                 error = await refresh.text();
-            } catch (e) {}
+            } catch (e) {
+            }
             if (refresh.status === 401 && error)
                 throw new Error(error);
             if (error)
@@ -46,4 +47,29 @@ export async function getToken() {
     localStorage.setItem('gog-tokens', JSON.stringify(tokens));
 
     return tokens.access_token;
+}
+
+export class GogAuth {
+    channel: RTCDataChannel;
+    private _messageHandler: (event: any) => Promise<void>;
+
+    constructor(channel: RTCDataChannel, game: string) {
+        this.channel = channel;
+        this._messageHandler = this.onMessage.bind(this);
+        channel.addEventListener('message', this._messageHandler);
+    }
+
+    async onMessage(event: MessageEvent<string>) {
+        try {
+            const token = await getToken();
+            this.channel.send(JSON.stringify({token}));
+        } catch (e: any) {
+            console.error('error getting GOG token', e);
+            this.channel.send(JSON.stringify({error: e.name, message: e.message}));
+        }
+    }
+
+    destroy() {
+        this.channel.removeEventListener('message', this._messageHandler);
+    }
 }
