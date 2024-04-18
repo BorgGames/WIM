@@ -98,6 +98,9 @@ export class Home {
 
         if (Steam.loginRedirected())
             await handleSteamLogin();
+
+        if (await GOG.getToken() !== null)
+            document.getElementById('gog-div')!.style.display = 'block';
     }
 
     static async login(loud?: boolean) {
