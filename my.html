@@ -100,14 +100,44 @@
         function runClient(pc, signalFactory, element, sessionId, timeout) {
             return new Promise(async (resolve) => {
                 const iceServers = getIceServers();
+                let stall = 0;
                 //set up client object with an event callback: gets connect, status, chat, and shutter events
                 const client = new Client(clientApi, signalFactory, element, (event) => {
                     console.log('EVENT', event);
+
+                    function startStall() {
+                        if (stall !== 0) return;
+                        stall = setTimeout(() => {
+                            if (!client.exited())
+                                client.destroy(Client.StopCodes.CONNECTION_TIMEOUT);
+                        }, 15000);
+                        console.debug('stall started: ', stall);
+                    }
+                    function stopStall() {
+                        if (stall !== 0) {
+                            clearTimeout(stall);
+                            console.debug('stall cleared: ' + stall);
+                            stall = 0;
+                        }
+                    }
 
                     switch (event.type) {
                     case 'exit':
                         document.removeEventListener('keydown', hotkeys, true);
                         resolve(event.code);
+                        break;
+                    case 'pause':
+                        if (event.msg.str === 'true') {
+                            stopStall();
+                        } else {
+                            startStall();
+                        }
+                        break;
+                    case 'stall':
+                        startStall();
+                        break;
+                    case 'frame':
+                        stopStall();
                         break;
                     case 'status':
                         status.innerText = event.msg.str;
