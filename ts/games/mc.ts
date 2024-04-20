@@ -66,6 +66,8 @@ export async function loginRequired() {
 async function getProfile(accessToken: string) {
     const profileUrl = AUTH_ENDPOINT + 'check/' + encodeURIComponent(accessToken);
     const profile = await fetch(profileUrl, {method: 'POST'});
+    if (profile.status === 401)
+        return new Error('Unauthorized');
     return await profile.json();
 }
 
