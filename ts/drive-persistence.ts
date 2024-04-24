@@ -2,19 +2,19 @@
 const MONITOR_PREFIX = "https://api.onedrive.com/v1.0/monitor/";
 const MAX_CONTENT_SIZE = 128*1024;
 
-function codeResponse(channel: RTCDataChannel, code: number, text: string) {
-    channel.send(JSON.stringify({
+function codeResponse(channel: RTCDataChannel, prefix: string, code: number, text: string) {
+    channel.send(prefix + JSON.stringify({
         status: code,
         body: btoa(text),
     }));
 }
 
-const forbidden = (channel: RTCDataChannel, text: string) => codeResponse(channel, 403, text);
-const unauthorized = (channel: RTCDataChannel, text: string) => codeResponse(channel, 401, text);
-const invalidArg = (channel: RTCDataChannel, text: string) => codeResponse(channel, 400, text);
+const forbidden = (channel: RTCDataChannel, prefix: string, text: string) => codeResponse(channel, prefix, 403, text);
+const unauthorized = (channel: RTCDataChannel, prefix: string, text: string) => codeResponse(channel, prefix, 401, text);
+const invalidArg = (channel: RTCDataChannel, prefix: string, text: string) => codeResponse(channel, prefix, 400, text);
 
-function odataError(channel: RTCDataChannel, httpCode: number, errorCode: string, message: string) {
-    channel.send(JSON.stringify({
+function odataError(channel: RTCDataChannel, prefix: string, httpCode: number, errorCode: string, message: string) {
+    channel.send(prefix + JSON.stringify({
         status: httpCode,
         contentType: "application/json",
         body: strToBase64(JSON.stringify({
@@ -69,7 +69,10 @@ export class OneDrivePersistence {
 
     async forward(event: MessageEvent<string>) {
         const channel = <RTCDataChannel>event.target;
-        const request = JSON.parse(event.data);
+        const jsonStart = event.data.indexOf('{');
+        const prefix = event.data.substring(0, jsonStart);
+        const json = event.data.substring(jsonStart);
+        const request = JSON.parse(json);
         try {
             if (request.options?.body)
                 request.options.body = await base64ToArrayBuffer(request.options.body);
@@ -85,13 +88,13 @@ export class OneDrivePersistence {
                     if (request.uri.startsWith(MONITOR_PREFIX))
                         call = new Request(request.uri, true);
                     else
-                        return unauthorized(channel, "globalAccess");
+                        return unauthorized(channel, prefix, "globalAccess");
                     break;
                 default:
-                    return invalidArg(channel, "protocol");
+                    return invalidArg(channel, prefix, "protocol");
             }
             if (call?.drive && !this.allowed(call.drive) || call?.item && !this.allowed(call.item))
-                return forbidden(channel, "drive or item");
+                return forbidden(channel, prefix, "drive or item");
 
             const response = await SYNC.makeRequest(call.url, request.options);
             const location = response.headers.get('Location');
@@ -100,7 +103,7 @@ export class OneDrivePersistence {
             
             if (body.size > MAX_CONTENT_SIZE) {
                 console.error(request.uri, "content too large", body.size);
-                return odataError(channel, 502, "responseTooLarge",
+                return odataError(channel, prefix, 502, "responseTooLarge",
                     `The ${body.size} bytes response body is too large. The maximum size is ${MAX_CONTENT_SIZE} bytes.`);
             }
 
@@ -113,11 +116,11 @@ export class OneDrivePersistence {
                 location,
                 contentType,
             };
-            channel.send(JSON.stringify(result));
+            channel.send(prefix + JSON.stringify(result));
             console.debug(method, request.uri, response.status)
         } catch (e) {
             console.error(request.uri, e);
-            channel.send(JSON.stringify({
+            channel.send(prefix + JSON.stringify({
                 status: 502,
                 contentType: "application/json",
                 body: strToBase64(JSON.stringify(e)),
