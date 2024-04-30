@@ -160,6 +160,7 @@ export class Home {
             for (let i = 0; i < nodes.length; i++) {
                 const offer = nodes[i];
                 let stall = 0;
+                let stall_reset = 0;
                 let auth: GOG.GogAuth | null = null;
                 //set up client object with an event callback: gets connect, status, chat, and shutter events
                 const client = new Client(clientApi, signalFactory, videoContainer, (event) => {
@@ -182,6 +183,12 @@ export class Home {
                                 if (!client.exited())
                                     client.destroy(Client.StopCodes.CONNECTION_TIMEOUT);
                             }, 30000);
+                            stall_reset = setTimeout(() => {
+                                if (!client.exited() && controlChannel !== null) {
+                                    controlChannel.send(Msg.reinit());
+                                    stall_reset = 0;
+                                }
+                            });
                             console.debug('stall started: ', stall);
                             break;
                         case 'frame':
@@ -189,6 +196,11 @@ export class Home {
                                 console.debug('stall cleared: ' + stall);
                                 clearTimeout(stall);
                                 stall = 0;
+                            }
+                            if (stall_reset !== 0) {
+                                console.debug('stall reset cleared: ' + stall_reset);
+                                clearTimeout(stall_reset);
+                                stall_reset = 0;
                             }
                             break;
                         case 'status':
