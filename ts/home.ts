@@ -311,7 +311,7 @@ export class Home {
     }
 
     static async launch(config: ILaunchConfig) {
-        const timeout = util.timeout(1000 /*s*/ * 60 /*m*/ * 3);
+        const timeout = util.timeout(1000 /*s*/ * 60 /*m*/ * 5);
 
         try {
             if (!config.sessionId)
@@ -321,8 +321,8 @@ export class Home {
                 if (!await showLoginDialog())
                     return;
             }
-            
-            const uri = new URL('borg:' + config.game);
+
+            const uri = new URL('borg:games/' + config.game);
 
             const gameName = config.game === 'minecraft' || config.game.startsWith("minecraft?")
                 ? 'Minecraft' : 'Factorio';
@@ -331,7 +331,7 @@ export class Home {
 
             let persistenceID: string | undefined = undefined;
             if (SYNC.isLoggedIn())
-                persistenceID = await ensureSyncFolders(gameName);
+                persistenceID = await ensureSyncFolders(uri);
 
             switch (config.game) {
                 case 'factorio':
@@ -431,8 +431,35 @@ function showMinecraftLogin(login: Minecraft.IMinecraftLoginInit) {
     mcLoginDialog.style.display = 'flex';
 }
 
-async function ensureSyncFolders(game: string): Promise<string> {
-    const url = 'special/approot:/Games/' + game;
+async function ensureSyncFolders(game: URL): Promise<string> {
+    let gamePathParts = game.pathname.split('/').slice(1);
+    if (gamePathParts.length === 0)
+        throw new Error('Invalid game path');
+
+    let gameDir = gamePathParts[0];
+    let platform = null;
+
+    if (gamePathParts.length === 1) {
+        if (gameDir == 'minecraft')
+            gameDir = 'Minecraft';
+        else if (gameDir == 'factorio')
+            gameDir = 'Factorio';
+    } else {
+        switch (gameDir) {
+            case 'gog': case 'GOG':
+                gameDir = 'GOG/' + gamePathParts[1];
+                platform = 'GOG';
+                break;
+            default:
+                throw new Error('Invalid game path');
+        }
+    }
+
+    let url = 'special/approot:/Games/';
+    if (platform !== null) {
+        url = url + platform + '/';
+    }
+    url = url + gameDir;
     let response = await SYNC.makeRequest(url, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
