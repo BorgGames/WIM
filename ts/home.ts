@@ -49,6 +49,8 @@ const emailInvite = "mailto:"
 
 export class Home {
     static async init() {
+        const networkText = document.getElementById('network')!;
+        networkText.innerText = NETWORK || '';
         const steamLogin = document.getElementById('steam-login')!;
         steamLogin.addEventListener('click', () => Steam.login());
 
