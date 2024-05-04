@@ -49,6 +49,9 @@ export class Launcher {
             option.defaultSelected = offer.pc === preferred;
             gamePC.appendChild(option);
             const exe = GameID.tryGetExe(offer.Uri);
+            if (offer.Support === "OK") {
+                supportStatus.style.display = "none";
+            }
             if (exe === null) {
                 console.warn("No executable found in game URI", offer.Uri);
                 continue;
