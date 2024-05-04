@@ -124,6 +124,7 @@
                     switch (event.type) {
                     case 'exit':
                         document.removeEventListener('keydown', hotkeys, true);
+                        window.removeEventListener('resize', onResize);
                         resolve(event.code);
                         break;
                     case 'pause':
@@ -192,16 +193,40 @@
                 };
                 document.addEventListener('keydown', hotkeys, true);
 
+                function onResize() {
+                    const w = Math.trunc(window.devicePixelRatio * element.clientWidth);
+                    const h = Math.trunc(window.devicePixelRatio * element.clientHeight)
+                    if (w >= 640 && h >= 480 && w <= 8000 && h <= 8000) {
+                        let cfg = {
+                            server_resolution_x: w,
+                            server_resolution_y: h,
+                        };
+                        if (!client.exited() && client.isConnected)
+                            client.setConfig(cfg);
+                    }
+                }
+
                 try {
                     const offer = await OneDriveSignal.getServerOffer(pc, timeout);
 
+                    const cfg = {
+                        encoder_bitrate: parseInt(localStorage.getItem('encoder_bitrate')) || 1,
+                    };
+
+                    const w = Math.trunc(window.devicePixelRatio * element.clientWidth);
+                    const h = Math.trunc(window.devicePixelRatio * element.clientHeight);
+                    if (w >= 640 && h >= 480 && w <= 8000 && h <= 8000) {
+                        cfg.server_resolution_x = w;
+                        cfg.server_resolution_y = h;
+                    }
+
+                    window.addEventListener('resize', onResize);
+
                     await Promise.race([
                         timeout,
-                        client.connect(offer.session, offer.sdp, {
-                            encoder_bitrate: parseInt(localStorage.getItem('encoder_bitrate')) || 1,
-                            app_ss_endpoint: 'localhost',
-                            app_ss_port: 7173,
-                        })]);
+                        client.connect(offer.session, offer.sdp, cfg)]);
+
+                    onResize();
                 } catch (e) {
                     if (e.message === 'cancelled')
                         client.destroy(0);
