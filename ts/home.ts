@@ -455,11 +455,7 @@ async function ensureSyncFolders(game: URL): Promise<string> {
         }
     }
 
-    let url = 'special/approot:/Games/';
-    if (platform !== null) {
-        url = url + platform + '/';
-    }
-    url = url + gameDir;
+    let url = 'special/approot:/Games/' + gameDir;
     let response = await SYNC.makeRequest(url, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
