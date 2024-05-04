@@ -75,6 +75,7 @@
 
         import { Client } from './js/streaming-client/built/client.js';
         import { ClientAPI } from './js/client-api.js';
+        import { configureInput } from "./js/borg-input.js";
         import { configureRTC } from "./js/codecs.js";
         import { MY as OneDrive } from "./js/onedrive.js";
         import { OneDriveRunningGames } from './js/drive-gamefs.js';
@@ -181,6 +182,7 @@
                     }
                 }, iceServers);
                 client.configureRTC = configureRTC;
+                configureInput(client.input);
                 //set up useful hotkeys that call client methods: destroy can also be used to cancel pending connection
                 const hotkeys = (event) => {
                     event.preventDefault();

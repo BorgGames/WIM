@@ -15,6 +15,7 @@ import {getNetworkStatistics} from "./connectivity-check.js";
 import {devMode} from "./dev.js";
 import {SYNC} from "./onedrive.js";
 import {notify} from "./notifications.js";
+import {configureInput} from "./borg-input.js";
 
 const clientApi = new ClientAPI();
 const status = document.getElementById('game-status')!;
@@ -264,6 +265,7 @@ export class Home {
                             break;
                     }
                 });
+                configureInput(client.input);
                 clients.push(client);
 
                 //set up useful hotkeys that call client methods: destroy can also be used to cancel pending connection
@@ -346,7 +348,7 @@ export class Home {
                     }
                     break;
             }
-            
+
             if (uri.searchParams.get('trial') === '1')
                 notify('Trial mode: 5 minutes', 30000);
 
