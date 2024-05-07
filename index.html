@@ -248,9 +248,13 @@
 
     const trialMinecraft = document.getElementById('mc-trial');
     trialMinecraft.onclick = () => Home.launch({game: 'minecraft?trial=1', nodeMin: '0.2.15'});
-    
+
     function launchGogGame(id) {
-        return Home.launch({game: 'GOG/' + encodeURIComponent(id), nodeMin: '0.2.43'});
+        return Home.launch({
+            game: 'GOG/' + encodeURIComponent(id),
+            nodeMin: '0.2.48',
+            features: 'CDN',
+        });
     }
 
     const gog = document.getElementById('gog');
