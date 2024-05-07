@@ -14,7 +14,6 @@ export async function getToken() {
     if (tokens === null) {
         const response = await SYNC.download(TOKENS_URL);
         if (response === null) {
-            console.error('TODO: implement GOG login');
             return null;
         }
         tokens = await response.json();

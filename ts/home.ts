@@ -7,7 +7,7 @@ import * as Steam from "./auth/steam.js";
 
 import {Client, IExitEvent} from '../js/streaming-client/built/client.js';
 import {ClientAPI} from "./client-api.js";
-import {Ephemeral, IBorgNode} from "./ephemeral.js";
+import {Ephemeral, IBorgNode, INodeFilter} from "./ephemeral.js";
 import {OneDrivePersistence} from "./drive-persistence.js";
 import {Session} from "./session.js";
 
@@ -103,7 +103,8 @@ export class Home {
             await handleSteamLogin();
 
         // updates .gog-pending/.gog
-        await GOG.getToken();
+        if (loggedIn)
+            await GOG.getToken();
     }
 
     static async login(loud?: boolean) {
@@ -353,7 +354,7 @@ export class Home {
                 notify('Trial mode: 5 minutes', 30000);
 
             status.innerText = 'looking for a node...';
-            const nodes = await Ephemeral.getNodes(null, NETWORK, config.nodeMin, config.nodeMax);
+            const nodes = await Ephemeral.getNodes(null, NETWORK, config.nodeFilter);
             if (nodes.length === 0)
                 throw new Error('No nodes currently available. Try again later.');
 
@@ -481,7 +482,6 @@ function safariHack() {
 
 interface ILaunchConfig {
     game: string;
-    nodeMin: string;
-    nodeMax: string;
+    nodeFilter?: INodeFilter,
     sessionId?: string;
 }

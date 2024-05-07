@@ -1,4 +1,4 @@
-import {Ephemeral, IBorgNode} from "./ephemeral.js";
+import {Ephemeral, IBorgNode, INodeFilter} from "./ephemeral.js";
 import {PubSub} from "./util.js";
 import {RTC} from "../js/streaming-client/built/rtc.js";
 import {timeout} from "../js/streaming-client/built/util.js";
@@ -95,13 +95,13 @@ export class ConduitService {
         this.rtc.close();
     }
 
-    static async connect(serviceName: string, verMin?: string, verMax?: string, cancel?: Promise<any>) {
+    static async connect(serviceName: string, nodeFilter: INodeFilter, cancel?: Promise<any>) {
         let cancelled = false;
         if (cancel)
             cancel.catch(() => cancelled = true);
 
         while (!cancelled) {
-            const nodes = await Ephemeral.getNodes(null, serviceName, verMin, verMax, cancel);
+            const nodes = await Ephemeral.getNodes(null, serviceName, nodeFilter, cancel);
             for (const offer of nodes) {
                 try {
                     return _connect(serviceName, offer, cancel);

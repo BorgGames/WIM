@@ -9,6 +9,12 @@ export interface IBorgNode {
     peer_connection_offer: string;
 }
 
+export interface INodeFilter {
+    verMin?: string;
+    verMax?: string;
+    features?: string[];
+}
+
 export class Ephemeral {
     sessionId?: string;
     secret?: string;
@@ -54,7 +60,7 @@ export class Ephemeral {
     }
 
     static async getNodes(endpoint?: string | null, secret?: string | null,
-                          verMin?: string, verMax?: string,
+                          filter?: INodeFilter,
                           cancel?: any): Promise<IBorgNode[]> {
         endpoint = endpoint || API;
         const options: RequestInit = {};
@@ -62,13 +68,17 @@ export class Ephemeral {
             options.headers = {'Secret': secret};
         let uri = endpoint + 'offers';
         const search = <Record<string, string>>{};
-        if (verMin !== undefined)
-            search.verMin = verMin;
-        if (verMax !== undefined)
-            search.verMax = verMax;
-        const filter = new URLSearchParams(search).toString();
-        if (filter)
-            uri += '?' + filter;
+        if (filter !== undefined) {
+            if (filter.verMin !== undefined)
+                search.verMin = filter.verMin;
+            if (filter.verMax !== undefined)
+                search.verMax = filter.verMax;
+            if (filter.features !== undefined)
+                search.features = filter.features.join(',');
+        }
+        const filterQuery = new URLSearchParams(search).toString();
+        if (filterQuery)
+            uri += '?' + filterQuery;
         const response = await fetch(uri, options);
         if (!response.ok)
             throw new Error('Failed to fetch nodes');

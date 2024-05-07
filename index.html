@@ -239,21 +239,23 @@
         fullMinecraft.disabled = true;
         try {
             if (SYNC.isLoggedIn() || await showLoginDialog())
-                return Home.launch({game: 'minecraft', nodeMin: '0.2.15'});
-            return Home.launch({game: 'minecraft?trial=1', nodeMin: '0.2.17'});
+                return Home.launch({game: 'minecraft', nodeFilter: { verMin: '0.2.15' }});
+            return Home.launch({game: 'minecraft?trial=1', nodeFilter: { verMin: '0.2.17' }});
         } finally {
             fullMinecraft.disabled = false;
         }
     };
 
     const trialMinecraft = document.getElementById('mc-trial');
-    trialMinecraft.onclick = () => Home.launch({game: 'minecraft?trial=1', nodeMin: '0.2.15'});
+    trialMinecraft.onclick = () => Home.launch({game: 'minecraft?trial=1', nodeFilter: { verMin: '0.2.15' }});
 
     function launchGogGame(id) {
         return Home.launch({
             game: 'GOG/' + encodeURIComponent(id),
-            nodeMin: '0.2.48',
-            features: 'CDN',
+            nodeFilter: {
+                verMin: '0.2.48',
+                features: ['CDN'],
+            },
         });
     }
 
