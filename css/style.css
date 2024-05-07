@@ -33,6 +33,10 @@ a[href] {
     color: white;
 }
 
+.bad {
+    color: red;
+}
+
 .content {
     grid-area: main;
     min-height: 0;
@@ -332,6 +336,18 @@ body.sync-pending #loginButton {
     display: none;
 }
 
+.sync-pending .needs-sync {
+    display: none;
+}
+
+.gog-pending .needs-gog {
+    display: none;
+}
+
+.gog #gog-login-prompt {
+    display: none;
+}
+
 #space {
     display: none;
 }
@@ -346,6 +362,11 @@ body.sync #space {
 
 #steam-qr {
     display: inline-block;
+}
+
+#gog-tiles input[type="image"] {
+    width: auto;
+    height: 16em;
 }
 
 #factorio {

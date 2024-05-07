@@ -102,8 +102,8 @@ export class Home {
         if (Steam.loginRedirected())
             await handleSteamLogin();
 
-        if (loggedIn && await GOG.getToken() !== null)
-            document.getElementById('gog-div')!.style.display = 'block';
+        // updates .gog-pending/.gog
+        await GOG.getToken();
     }
 
     static async login(loud?: boolean) {

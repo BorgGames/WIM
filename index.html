@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 
-<body class="sync-pending release no-nodes">
+<body class="sync-pending gog-pending release no-nodes">
 <h1 class="no-video"><span class="dev">DEV MODE -</span> Play in your browser <span id="network"></span>
     <noscript><h1>Cloud gaming requires JavaScript</h1></noscript>
 </h1>
@@ -91,11 +91,33 @@
 
     <button class="action" type="button" id="minecraft" title="Play Minecraft">Play</button>
     
-    <div class="dev" id="gog-div">
+    <div id="gog-div" class="needs-gog">
     <h2>GOG</h2>
 
+        <div id="gog-tiles">
+            <input type="image"
+                   src="https://images.gog-statics.com/ea259a24ad682c437b0b3e2062f56bfbf743a87d3009994bb9fae59cea7f30a1.jpg"
+                   alt="Divinity: Original Sin 2 - Definitive Edition"
+                   onclick="playGogGame('1584823040')"
+            />
+        </div>
+
+    <div class="dev">
     <input type="text" placeholder="GOG Game ID" id="gog-game-id">
     <button class="action" type="button" id="gog" title="Play GOG game">Play</button>
+    </div>
+    </div>
+    
+    <div class="dev needs-sync" id="gog-login-prompt">
+        <h2>Connect your GOG.com account</h2>
+        <button class="action" type="button" id="gog-login"
+                title="Connect GOG account"
+                onclick="document.getElementById('gog-login-dialog').style.display='flex';">Connect</button>
+        <p class="mute">Currently supported:
+        <p class="mute">
+            <span>Divinity: Original Sin 2 - Definitive Edition</span>
+            <br/>
+        </p>
     </div>
     
     <h2>&nbsp;</h2>
@@ -141,6 +163,42 @@
         - or -
         <button id="mc-trial" class="action" type="button">Play Trial</button>
         <i>trial has 5 minute session limit</i>
+    </div>
+</div>
+
+<div id="gog-login-dialog" class="modal-dialog">
+    <div class="solid">
+        <h1>Connect your GOG.com account</h1>
+        <h2>Connect in the Borg app (easy)</h2>
+        <!-- store icons to Windows, iOS, Android, and FireTV apps -->
+        <script type="module"
+                src="https://get.microsoft.com/badge/ms-store-badge.bundled.js"
+                crossorigin="anonymous"></script>
+        <ms-store-badge productid="9NTDRRR4814S" id="get-from-store"></ms-store-badge>
+        <a href="ms-windows-store://pdp/?ProductId=9NTDRRR4814S" id="get-from-store-plain" style="display: none">
+            <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Download Borg node" />
+        </a>
+        <script>
+            setTimeout(() => {
+                const get = document.getElementById('get-from-store');
+                if (get.children.length === 0 && !get.shadowRoot) {
+                    document.getElementById('get-from-store-plain').style.display = 'inline-block';
+                }
+            }, 3000);
+        </script>
+        <noscript><a href="ms-windows-store://pdp/?productid=9NTDRRR4814S">Get from Microsoft Store</a></noscript>
+        
+        <h2>Manually copy the code from the browser (harder)</h2>
+        <p>Click the link below, log in, and copy the final page address here</p>
+        <p>
+            <input id="gog-code" type="text" class="bad"
+                   placeholder="https://embed.gog.com/on_login_success?..."
+                   style="width: 32em;">
+        </p>
+        <p>
+            <a href="https://auth.gog.com/auth?client_id=46899977096215655&redirect_uri=https%3A%2F%2Fembed.gog.com%2Fon_login_success%3Forigin%3Dclient&response_type=code&layout=client2"
+               target="_blank">Open the login page</a>
+        </p>
     </div>
 </div>
 
@@ -190,11 +248,15 @@
 
     const trialMinecraft = document.getElementById('mc-trial');
     trialMinecraft.onclick = () => Home.launch({game: 'minecraft?trial=1', nodeMin: '0.2.15'});
+    
+    function launchGogGame(id) {
+        return Home.launch({game: 'GOG/' + encodeURIComponent(id), nodeMin: '0.2.43'});
+    }
 
     const gog = document.getElementById('gog');
     gog.onclick = function () {
         const id = document.getElementById('gog-game-id').value;
-        return Home.launch({game: 'GOG/' + id, nodeMin: '0.2.43'});
+        return launchGogGame(id);
     };
 
     async function main() {
@@ -213,6 +275,8 @@
         // if (!full.disabled)
         //     full.title = '';
     }
+    
+    window.playGogGame = async id => launchGogGame(id);
 
     main();
 </script>

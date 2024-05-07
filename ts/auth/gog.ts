@@ -6,9 +6,10 @@ const AUTH_ENDPOINT = devMode()
     : 'https://borg-ephemeral.azurewebsites.net/cors/gog/';
 
 const TOKENS_URL = 'special/approot:/Stores/gog-tokens.json';
+const TOKENS_KEY = 'gog-tokens';
 
 export async function getToken() {
-    let tokens = JSON.parse(localStorage.getItem('gog-tokens')!);
+    let tokens = JSON.parse(localStorage.getItem(TOKENS_KEY)!);
 
     if (tokens === null) {
         const response = await SYNC.download(TOKENS_URL);
@@ -44,7 +45,15 @@ export async function getToken() {
         console.error('error refreshing token', e);
     }
 
-    localStorage.setItem('gog-tokens', JSON.stringify(tokens));
+    localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens));
+    try {
+        await saveTokens();
+    } catch (e) {
+        console.error('error saving tokens', e);
+    }
+    
+    document.body.classList.add('gog');
+    document.body.classList.remove('gog-pending');
 
     return tokens.access_token;
 }
@@ -73,3 +82,63 @@ export class GogAuth {
         this.channel.removeEventListener('message', this._messageHandler);
     }
 }
+
+async function completeLogin(code: string) {
+    const url = AUTH_ENDPOINT + 'code2token?code=' + encodeURIComponent(code);
+    const response = await fetch(url, {
+        method: 'POST',
+    });
+    if (!response.ok) {
+        let error = "";
+        try {
+            error = await response.text();
+        } catch (e) {
+        }
+        if (response.status === 401 && error)
+            throw new Error(error);
+        if (error)
+            error = "\r\n" + error;
+        throw new Error(`HTTP ${response.status}: ${response.statusText} ${error}`);
+    }
+    const tokens = await response.json();
+    localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens));
+
+    console.log('GOG.com logged in');
+
+    gogLogin.style.display = 'none';
+    document.body.classList.remove('gog-pending');
+    document.body.classList.add('gog');
+}
+
+async function saveTokens() {
+    const save = await SYNC.makeRequest(TOKENS_URL + ':/content', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: localStorage.getItem(TOKENS_KEY),
+    });
+    if (!save.ok)
+        throw new Error(`Failed to save GOG account: HTTP ${save.status}: ${save.statusText}`);
+}
+
+const codeInput = <HTMLInputElement>document.getElementById('gog-code')!;
+const gogLogin = document.getElementById('gog-login-dialog')!;
+codeInput.addEventListener('input', async event => {
+    if (codeInput.value.startsWith('https://embed.gog.com/on_login_success?')) {
+        const params = new URLSearchParams(codeInput.value);
+        const code = params.get('code');
+        if (!code)
+            return;
+        
+        console.log('GOG code:', code);
+        codeInput.classList.remove('bad');
+        codeInput.disabled = true;
+        try {
+            await completeLogin(code);
+        } catch (e) {
+            codeInput.classList.add('bad');
+            throw e;
+        } finally {
+            codeInput.disabled = false;
+        }
+    }
+});
