@@ -410,3 +410,7 @@ button.action {
 .release .dev {
     display: none;
 }
+
+.web .mobile {
+    display: none;
+}

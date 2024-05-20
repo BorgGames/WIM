@@ -1,0 +1,106 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="canonical" href="https://borg.games/connect/GOG.com"/>
+
+    <link rel="shortcut icon" href="/favicon.svg" sizes="any" type="image/svg+xml"/>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#0d0d0d">
+    <meta name="msapplication-TileColor" content="#101010">
+    <meta name="theme-color" content="#000000">
+
+    <title>Connect GOG.com account - Borg Games</title>
+    <meta name="description"
+          content="Connect GOG.com account to play games on Borg Games">
+    <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+        .app-buttons {
+            gap: 10px;
+        }
+
+        .app-button {
+            display: inline-block;
+            margin: 10px;
+        }
+
+        .app-button img {
+            height: 40px;
+        }
+        
+        h2 {
+            margin-top: 2em;
+        }
+    </style>
+</head>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-16572194743"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'AW-16572194743');
+</script>
+
+<body class="release web">
+<div class="content">
+    <h1 style="margin-bottom: 2.5em;">
+        Connect <img src="/img/gogcom-white-regular.png" alt="GOG.com" height="40"
+                     style="margin-bottom: -10px; margin-left: 8px;"/>
+    </h1>
+    <h2>In Borg Games app</h2>
+    <div class="app-buttons">
+        <a href="https://apps.apple.com/app/borg-games/id[YOUR_IOS_APP_ID]" target="_blank" class="app-button">
+            <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
+                 alt="Download on the App Store" height="40">
+        </a>
+        <a href="https://play.google.com/store/apps/details?id=games.borg.Borg.Mobile" target="_blank"
+           class="app-button">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+                 alt="Get it on Google Play" height="40">
+        </a>
+        <br/>
+        <a href="https://itunes.apple.com/app/id[YOUR_MACOS_APP_ID]" target="_blank" class="app-button">
+            <img src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-mac-app-store.svg"
+                 alt="Download on the Mac App Store" height="40">
+        </a>
+        <a href="https://www.microsoft.com/store/apps/[YOUR_WINDOWS_APP_ID]" target="_blank" class="app-button">
+            <img src="https://get.microsoft.com/images/en-us%20dark.svg"
+                 alt="Get it from Microsoft" height="40">
+        </a>
+        <br/>
+        <a href="https://developer.tizen.org/development/tizen-studio/download" target="_blank" class="app-button">
+            <img src="/img/samsung-tv-logo.svg"
+                 style="background: white; padding: 4px 10px; border-radius: 5px; height: 32px;"
+                 alt="Download on the Tizen Store" height="32">
+        </a>
+    </div>
+
+    <h2>Manually copy code from the browser</h2>
+    <p>Click the link below, log in, and copy the final page address here</p>
+    <p>
+        <input id="gog-code" type="text" class="bad"
+               placeholder="https://embed.gog.com/on_login_success?..."
+               style="width: 32em;">
+    </p>
+    <p>
+        <a href="https://auth.gog.com/auth?client_id=46899977096215655&redirect_uri=https%3A%2F%2Fembed.gog.com%2Fon_login_success%3Forigin%3Dclient&response_type=code&layout=client2"
+           target="_blank" style="font-size: 20px;">
+            <img src="/img/gogcom-white-regular.png" alt="GOG.com" height="30"
+                 style="margin-bottom: -10px; margin-right: 8px;"/>login
+        </a>
+    </p>
+</div>
+</body>
+</html>

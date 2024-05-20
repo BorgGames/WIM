@@ -30,7 +30,7 @@
     gtag('config', 'AW-16572194743');
 </script>
 
-<body class="sync-pending gog-pending release no-nodes">
+<body class="sync-pending gog-pending release web no-nodes">
 <h1 class="no-video"><span class="dev">DEV MODE -</span> Play in your browser <span id="network"></span>
     <noscript><h1>Cloud gaming requires JavaScript</h1></noscript>
 </h1>
@@ -126,7 +126,13 @@
     <button class="action" type="button" id="gog" title="Play GOG game">Play</button>
     </div>
     </div>
-    
+
+    <div class="mobile">
+        <a href="connect/GOG.com?return=/" style="font-size: 28px;">
+            <img src="/img/gogcom-white-regular.png" alt="GOG.com" height="40"
+                 style="margin-bottom: -11px; margin-right: 8px;"/>CONNECT</a>
+    </div>
+
     <div class="dev needs-sync" id="gog-login-prompt">
         <h2>Connect your GOG.com account</h2>
         <button class="action" type="button" id="gog-login"
