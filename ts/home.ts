@@ -103,8 +103,10 @@ export class Home {
             await handleSteamLogin();
 
         // updates .gog-pending/.gog
-        if (loggedIn)
+        if (loggedIn) {
+            await GOG.handleLogin();
             await GOG.getToken();
+        }
     }
 
     static async login(loud?: boolean) {
@@ -189,7 +191,6 @@ export class Home {
                             }, 30000);
                             stall_reset = setTimeout(() => {
                                 if (!client.exited() && controlChannel !== null) {
-                                    controlChannel.send(Msg.reinit());
                                     stall_reset = 0;
                                 }
                             });
