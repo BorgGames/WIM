@@ -163,6 +163,9 @@ const disconnectGog = document.getElementById('disconnect-gog');
 disconnectGog!.addEventListener('click', async event => {
     event.preventDefault();
 
+    if (!confirm('Disconnect GOG.com?'))
+        return;
+
     document.body.classList.remove('gog');
     document.body.classList.add('gog-pending');
 
