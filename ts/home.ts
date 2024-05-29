@@ -442,8 +442,15 @@ async function ensureSyncFolders(game: URL): Promise<string> {
     let platform = null;
 
     if (gamePathParts.length === 1) {
-        if (gameDir == 'minecraft')
+        if (gameDir == 'minecraft') {
             gameDir = 'Minecraft';
+            // workaround for https://github.com/BorgGames/Drone/issues/20
+            await SYNC.makeRequest('special/approot:/Games/Minecraft/saves', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({folder: {}})
+            });
+        }
         else if (gameDir == 'factorio')
             gameDir = 'Factorio';
     } else {
