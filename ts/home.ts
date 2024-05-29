@@ -31,6 +31,7 @@ const resume = document.getElementById('video-resume')!;
 resume.onclick = () => video.play();
 
 const mcLoginDialog = document.getElementById('mc-login-dialog')!;
+let mcLoginAbort = 'AbortController' in window ? new AbortController() : null;
 const modeSwitch = document.getElementById('mode-switch');
 const inviteButtons = document.querySelectorAll('button.invite');
 const inviteText = 'Join Borg P2P Cloud Gaming network to play remotely or rent your PC out.' +
@@ -343,7 +344,10 @@ export class Home {
                         const login = await Minecraft.beginLogin();
                         showMinecraftLogin(login);
                         try {
-                            await Minecraft.completeLogin(login.code);
+                            await Minecraft.completeLogin(login.code, mcLoginAbort?.signal);
+                        } catch (e) {
+                            if (mcLoginAbort !== null && e instanceof DOMException && e.name === 'AbortError')
+                                return;
                         } finally {
                             mcLoginDialog.style.display = 'none';
                         }
@@ -431,6 +435,15 @@ function showMinecraftLogin(login: Minecraft.IMinecraftLoginInit) {
     const loginLink = <HTMLAnchorElement>document.getElementById('mc-login-link');
     loginLink.href = login.location;
     mcLoginDialog.style.display = 'flex';
+}
+
+export async function abortMinecraftLogin() {
+    if (mcLoginAbort !== null) {
+        mcLoginAbort.abort();
+        mcLoginAbort = new AbortController();
+    }
+
+    await util.wait(1000);
 }
 
 async function ensureSyncFolders(game: URL): Promise<string> {

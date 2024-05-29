@@ -252,7 +252,7 @@
 <script type="module">
     import {devMode} from "./js/dev.js";
     import {Ephemeral} from "./js/ephemeral.js";
-    import {Home, showLoginDialog} from "./js/home.js";
+    import {Home, showLoginDialog, abortMinecraftLogin} from "./js/home.js";
     import {SYNC} from "./js/onedrive.js";
 
     const demo = document.getElementById('factorio-demo');
@@ -281,7 +281,10 @@
     };
 
     const trialMinecraft = document.getElementById('mc-trial');
-    trialMinecraft.onclick = () => Home.launch({game: 'minecraft?trial=1', nodeFilter: { verMin: '0.2.15' }});
+    trialMinecraft.onclick = async () => {
+        await abortMinecraftLogin();
+        Home.launch({game: 'minecraft?trial=1', nodeFilter: {verMin: '0.2.15'}});
+    }
 
     function launchGogGame(id) {
         return Home.launch({

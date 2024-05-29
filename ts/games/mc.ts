@@ -17,9 +17,9 @@ export async function beginLogin(): Promise<IMinecraftLoginInit> {
     return {code, location};
 }
 
-export async function completeLogin(code: string) {
+export async function completeLogin(code: string, signal: AbortSignal | undefined) {
     const completionUrl = AUTH_ENDPOINT + 'await/' + encodeURIComponent(code);
-    const completion = await fetch(completionUrl, {method: 'POST'});
+    const completion = await fetch(completionUrl, {method: 'POST', signal});
     if (!completion.ok) {
         let error = "";
         try {
