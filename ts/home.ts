@@ -463,6 +463,11 @@ async function ensureSyncFolders(game: URL): Promise<string> {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({folder: {}})
             });
+            await SYNC.makeRequest('special/approot:/Games/Minecraft/saves/.keep:/content', {
+                method: 'PUT',
+                headers: {'Content-Type': 'text/plain'},
+                body: 'https://github.com/BorgGames/Drone/issues/21'
+            });
         }
         else if (gameDir == 'factorio')
             gameDir = 'Factorio';
@@ -489,6 +494,12 @@ async function ensureSyncFolders(game: URL): Promise<string> {
 
     if (!response.ok)
         throw new Error(`Failed to create Sync folder: HTTP ${response.status}: ${response.statusText}`);
+    
+    await SYNC.makeRequest(url + '/.keep:/content', {
+        method: 'PUT',
+        headers: {'Content-Type': 'text/plain'},
+        body: 'https://github.com/BorgGames/Drone/issues/21'
+    });
 
     const item = await response.json();
 
