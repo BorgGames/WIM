@@ -23,7 +23,7 @@ const videoContainer = document.querySelector('.video-container')!;
 const video = <HTMLVideoElement>document.getElementById('stream')!;
 const videoBitrate = <HTMLInputElement>document.getElementById('video-bitrate');
 
-const NETWORK = null;
+const NETWORK = new URLSearchParams(window.location.search).get('interlink');
 
 let controlChannel: RTCDataChannel | null = null;
 
