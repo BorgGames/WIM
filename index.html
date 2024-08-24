@@ -16,8 +16,8 @@
     <meta name="msapplication-TileColor" content="#101010">
     <meta name="theme-color" content="#000000">
 
-    <title>Borg Games - Play Windows games in your browser</title>
-    <meta name="description" content="Play Minecraft and Factorio in your browser. Works on Macs, Chromebooks, smart TVs, ... everywhere. No downloads, no installs, no hassle.">
+    <title>Borg Demo</title>
+    <meta name="description" content="Demo">
     <link rel="stylesheet" href="/css/style.css">
 </head>
 
@@ -31,7 +31,7 @@
     gtag('config', 'AW-16572194743');
 </script>
 
-<body class="sync-pending gog-pending release web no-nodes">
+<body class="no-nodes">
 <h1 class="no-video"><span class="dev">DEV MODE -</span> Play in your browser <span id="network"></span>
     <noscript><h1>Cloud gaming requires JavaScript</h1></noscript>
 </h1>
@@ -56,251 +56,38 @@
 </div>
 
 <div class="content no-video">
-    <h2>Factorio</h2>
-    <button class="action" type="button" id="factorio-play">Play</button>
-    <div id="factorio-login">
-        <div class="no-nodes-message">
-            <h2>No nodes available - ask a friend to run one!</h2>
-            <p>
-                Know a friend with a gaming PC? Ask them to run a node so you could play!
-            </p>
-            <button class="action invite" type="button">Invite</button>
-            <button class="action" type="button" onclick="window.location.href = '/setup'">Setup own node</button>
-        </div>
-        <div id="factorio-login-container">
-            <a href="#" id="mode-switch" data-mode="steam">Use in-game login instead</a>
-            <form method="post" id="factorio-login-form" class="option login-mode">
-                <div id="factorio-credentials">
-                    <p>
-                        You must login in the game within a few minutes.
-                    </p>
-                </div>
-            </form>
-            <form id="steam-login-form" class="option selected login-mode">
-                <p>
-                    To play full game login with your Steam account:
-                </p>
-                <p>
-                    <button id="steam-login" type="button">Log in with Steam</button>
-                </p>
-                <p>
-                    -or-
-                </p>
-                <p>
-                    Scan QR code with Steam Mobile App
-                </p>
-                <div id="steam-qr"></div>
-            </form>
-        </div>
-        <button class="action" type="button" id="factorio">Play Full Game</button>
-        <p></p>
-        <button class="action" type="button" id="factorio-demo" disabled>Run Demo</button>
-    </div>
-
-    <h2>Minecraft</h2>
-
-    <button class="action" type="button" id="minecraft" title="Play Minecraft">Play</button>
+    <h3>WIM uri</h3>
+    <input type="url" id="wim-uri" placeholder="http://your.srv/dir/game.wim">
+    <h3>Run</h3>
+    <input type="text" id="wim-run" placeholder="bin/game-x64.exe">
     
-    <div id="gog-div" class="needs-gog">
-    <h2>GOG</h2>
+    <p>
+    <button class="action" type="button" id="run">Run</button>
+    </p>
 
-        <div id="gog-tiles">
-            <input type="image"
-                   src="https://images.gog-statics.com/ea259a24ad682c437b0b3e2062f56bfbf743a87d3009994bb9fae59cea7f30a1.jpg"
-                   alt="Divinity: Original Sin 2 - Definitive Edition"
-                   onclick="playGogGame('1584823040')"
-            />
-            <input type="image"
-                   src="https://images.gog-statics.com/f40142655077bfa1206119297d987d90dd77256c9504352c0e1579a23928341b.jpg"
-                   alt="Baldur's Gate 3"
-                   onclick="playGogGame('1456460669')"
-            />
-            <input type="image"
-                   src="https://images.gog-statics.com/ddedeef7636157b558d2fac8fa8a6c0d28e6fab0668c6aab7fd28220f29ec734.jpg"
-                   alt="Skyrim: SE"
-                   onclick="playGogGame('1711230643')"
-            />
-        </div>
-
-    <div class="dev">
-    <input type="text" placeholder="GOG Game ID" id="gog-game-id">
-    <button class="action" type="button" id="gog" title="Play GOG game">Play</button>
-    </div>
-    </div>
-
-    <div class="mobile needs-sync no-gog">
-        <a href="connect/GOG.com?return=/" style="font-size: 28px;">
-            <img src="/img/gogcom-white-regular.png" alt="GOG.com" height="40"
-                 style="margin-bottom: -11px; margin-right: 8px;"/>CONNECT</a>
-    </div>
-    
-    <div class="needs-gog">
-        <img src="/img/gogcom-white-regular.png" alt="GOG.com" height="40"
-             style="margin-bottom: -11px; margin-right: 8px;"/>
-        <span style="font-size: 28px">CONNECTED</span>
-        <p>
-        <a id="disconnect-gog" href="disconnect/GOG.com?return=/" style="font-size: 28px;">DISCONNECT</a>
-        </p>
-    </div>
-
-    <div class="dev needs-sync" id="gog-login-prompt">
-        <h2>Connect your GOG.com account</h2>
-        <button class="action" type="button" id="gog-login"
-                title="Connect GOG account"
-                onclick="document.getElementById('gog-login-dialog').style.display='flex';">Connect</button>
-        <p class="mute">Currently supported:
-        <p class="mute">
-            <span>Divinity: Original Sin 2 - Definitive Edition</span>
-            <br/>
-        </p>
-    </div>
-    
-    <h2>&nbsp;</h2>
-
-    <form style="display: inline-block;" action="https://forms.office.com/r/7LU5EzDLs8">
-        <button class="action" type="submit" style="font-size: larger;">Request a game</button>
-    </form>
-
-    <h2>&nbsp;</h2>
-
-    <a href="/setup">Securely rent your PC out for others to play on</a>
-
-    <h4>&nbsp;</h4>
-
+    <p>
     <a href="mailto:support@borg.games">🐞 Report an issue 🐞</a>
-</div>
-
-<div id="login-dialog" class="modal-dialog">
-    <div class="solid">
-        <h1>Choose where to save game progress</h1>
-        <h2>
-            <label>
-                Microsoft OneDrive
-                <br/>
-                <br/>
-                <button id="onedriveLogin" class="action" type="button"
-                        title="Login with OneDrive to save game progress">Login
-                </button>
-            </label>
-
-            <button id="cancelLogin" class="action" type="button">Cancel</button>
-        </h2>
-    </div>
-</div>
-
-<div id="mc-login-dialog" class="modal-dialog">
-    <div class="solid">
-        <h1>Sign in with your Microsoft account to play Minecraft</h1>
-        <h2>Copy the code and enter it on the login page</h2>
-        <h3 class="copy" id="mc-code"></h3>
-        <a id="mc-login-link" target="_blank">Open the login page</a>
-        <p></p>
-        - or -
-        <button id="mc-trial" class="action" type="button">Play Trial</button>
-        <i>trial has 5 minute session limit</i>
-    </div>
-</div>
-
-<div id="gog-login-dialog" class="modal-dialog">
-    <div class="solid">
-        <h1>Connect your GOG.com account</h1>
-        <h2>Connect in the Borg app (easy)</h2>
-        <!-- store icons to Windows, iOS, Android, and FireTV apps -->
-        <script type="module"
-                src="https://get.microsoft.com/badge/ms-store-badge.bundled.js"
-                crossorigin="anonymous"></script>
-        <ms-store-badge productid="9NTDRRR4814S" id="get-from-store"></ms-store-badge>
-        <a href="ms-windows-store://pdp/?ProductId=9NTDRRR4814S" id="get-from-store-plain" style="display: none">
-            <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Download Borg node" />
-        </a>
-        <script>
-            setTimeout(() => {
-                const get = document.getElementById('get-from-store');
-                if (get.children.length === 0 && !get.shadowRoot) {
-                    document.getElementById('get-from-store-plain').style.display = 'inline-block';
-                }
-            }, 3000);
-        </script>
-        <noscript><a href="ms-windows-store://pdp/?productid=9NTDRRR4814S">Get from Microsoft Store</a></noscript>
-        
-        <h2>Manually copy the code from the browser (harder)</h2>
-        <p>Click the link below, log in, and copy the final page address here</p>
-        <p>
-            <input id="gog-code" type="text" class="bad"
-                   placeholder="https://embed.gog.com/on_login_success?..."
-                   style="width: 32em;">
-        </p>
-        <p>
-            <a href="https://auth.gog.com/auth?client_id=46899977096215655&redirect_uri=https%3A%2F%2Fembed.gog.com%2Fon_login_success%3Forigin%3Dclient&response_type=code&layout=client2"
-               target="_blank">Open the login page</a>
-        </p>
-    </div>
-</div>
-
-<div class="footer">
-    <button id="loginButton" class="action" type="button" disabled style="font-size: larger;">LOGIN</button>
-    <progress id="space"></progress>
-    <h3 class="about"><a href="/about">© Borg Queen, LLC 2024</a></h3>
+    </p>
 </div>
 </body>
-<script src="https://alcdn.msauth.net/browser/2.38.2/js/msal-browser.min.js"
-        integrity="sha384-hhkHFODse2T75wPL7oJ0RZ+0CgRa74LNPhgx6wO6DMNEhU3/fSbTZdVzxsgyUelp"
-        crossorigin="anonymous"></script>
+
 <script src="https://webrtc.github.io/adapter/adapter-9.0.1.js"
         integrity="sha384-kOlMOLZNYoP5WSj2ag2vv9BgOnN1jTYirEjM0gTDQOhYuDWx964EPIkhdpbmN+OW"
         crossorigin="anonymous"></script>
-<script src="/js/qrcode.js"></script>
+
 <script type="module">
     import {devMode} from "./js/dev.js";
     import {Ephemeral} from "./js/ephemeral.js";
-    import {Home, showLoginDialog, abortMinecraftLogin} from "./js/home.js";
-    import {SYNC} from "./js/onedrive.js";
+    import {Home} from "./js/home.js";
 
-    const demo = document.getElementById('factorio-demo');
-    demo.onclick = function () {
+    const run = document.getElementById('run');
+    run.onclick = function () {
+        const wimUri = document.getElementById('wim-uri').value;
+        const wimRun = document.getElementById('wim-run').value;
         Home.launch({
-            game: 'factorio?demo=true',
+            demo: 'wim?url=' + encodeURIComponent(wimUri) + '&run=' + encodeURIComponent(wimRun),
+            nodeFilter: { verMin: '0.3.61' }
         });
-    };
-    const full = document.getElementById('factorio');
-    full.onclick = function () {
-        Home.launch({
-            game: 'factorio'
-        });
-    };
-
-    const fullMinecraft = document.getElementById('minecraft');
-    fullMinecraft.onclick = async function () {
-        fullMinecraft.disabled = true;
-        try {
-            if (SYNC.isLoggedIn() || await showLoginDialog())
-                return Home.launch({game: 'minecraft', nodeFilter: { verMin: '0.2.15' }});
-            return Home.launch({game: 'minecraft?trial=1', nodeFilter: { verMin: '0.2.17' }});
-        } finally {
-            fullMinecraft.disabled = false;
-        }
-    };
-
-    const trialMinecraft = document.getElementById('mc-trial');
-    trialMinecraft.onclick = async () => {
-        await abortMinecraftLogin();
-        Home.launch({game: 'minecraft?trial=1', nodeFilter: {verMin: '0.2.15'}});
-    }
-
-    function launchGogGame(id) {
-        return Home.launch({
-            game: 'GOG/' + encodeURIComponent(id),
-            nodeFilter: {
-                verMin: '0.2.48',
-                features: ['CDN'],
-            },
-        });
-    }
-
-    const gog = document.getElementById('gog');
-    gog.onclick = function () {
-        const id = document.getElementById('gog-game-id').value;
-        return launchGogGame(id);
     };
 
     async function main() {
@@ -310,18 +97,13 @@
         }
         await Home.init();
         const nodes = await Ephemeral.getNodes();
-        demo.disabled = nodes.length === 0;
-        if (!demo.disabled)
-            demo.title = '';
+        run.disabled = nodes.length === 0;
+        if (!run.disabled)
+            run.title = '';
         if (nodes.length > 0)
             document.body.classList.remove('no-nodes');
-        // full.disabled = nodes.length === 0;
-        // if (!full.disabled)
-        //     full.title = '';
     }
     
-    window.playGogGame = async id => launchGogGame(id);
-
     main();
 </script>
 
@@ -331,5 +113,4 @@
         window.location.reload();
     }
 </script>
-
 </html>

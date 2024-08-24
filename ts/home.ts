@@ -1,19 +1,13 @@
 ﻿import * as util from "../js/streaming-client/built/util.js";
-import * as GOG from "./auth/gog.js";
-import * as Factorio from './games/factorio.js';
-import * as Minecraft from "./games/mc.js";
 import * as Msg from '../js/streaming-client/built/msg.js';
-import * as Steam from "./auth/steam.js";
 
 import {Client, IExitEvent} from '../js/streaming-client/built/client.js';
 import {ClientAPI} from "./client-api.js";
 import {Ephemeral, IBorgNode, INodeFilter} from "./ephemeral.js";
-import {OneDrivePersistence} from "./drive-persistence.js";
 import {Session} from "./session.js";
 
 import {getNetworkStatistics} from "./connectivity-check.js";
 import {devMode} from "./dev.js";
-import {SYNC} from "./onedrive.js";
 import {notify} from "./notifications.js";
 import {configureInput} from "./borg-input.js";
 
@@ -30,49 +24,15 @@ let controlChannel: RTCDataChannel | null = null;
 const resume = document.getElementById('video-resume')!;
 resume.onclick = () => video.play();
 
-const mcLoginDialog = document.getElementById('mc-login-dialog')!;
-let mcLoginAbort = 'AbortController' in window ? new AbortController() : null;
-const modeSwitch = document.getElementById('mode-switch');
-const inviteButtons = document.querySelectorAll('button.invite');
-const inviteText = 'Join Borg P2P Cloud Gaming network to play remotely or rent your PC out.' +
-    ' You will need to install the Borg software on a gaming PC under Windows Pro.' +
-    ' You can download the Borg node software from the Microsoft Store.';
-const invite = {
-    title: 'Setup Borg node',
-    text: inviteText,
-    uri: 'https://borg.games/setup',
-};
-const emailInvite = "mailto:"
-    + "?subject=" + encodeURIComponent('Invite: Join Borg P2P Cloud Gaming')
-    + "&body=" + encodeURIComponent(inviteText
-        + '\n\nDownload Borg app from Microsoft Store: https://www.microsoft.com/store/apps/9NTDRRR4814S'
-        + '\n\nSetup instructions: https://borg.games/setup'
-    );
-
 export class Home {
     static async init() {
         const networkText = document.getElementById('network')!;
         networkText.innerText = NETWORK || '';
-        const steamLogin = document.getElementById('steam-login')!;
-        steamLogin.addEventListener('click', () => Steam.login());
 
         const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         if (isSafari)
             setInterval(safariHack, 3000);
-        let loginPromise = Home.login();
         videoBitrate.addEventListener('input', changeBitrate);
-
-        for (const button of inviteButtons) {
-            button.addEventListener('click', () => {
-                if (navigator.canShare && navigator.canShare(invite)) {
-                    navigator.share(invite)
-                        .then(() => console.log('Share was successful.'))
-                        .catch((error) => console.log('Sharing failed', error));
-                } else {
-                    window.open(emailInvite);
-                }
-            })
-        }
 
         function changeBitrate() {
             const value = +videoBitrate.value;
@@ -89,61 +49,6 @@ export class Home {
 
         videoBitrate.value = String(parseInt(localStorage.getItem('encoder_bitrate')!) || 2);
         changeBitrate();
-
-        const loginButton = <HTMLButtonElement>document.getElementById('loginButton');
-        loginButton.addEventListener('click', () => {
-            Home.login(true);
-        });
-        let loggedIn = await loginPromise;
-        if (!loggedIn && SYNC.account)
-            loggedIn = await Home.login(true);
-
-        loginButton.disabled = loggedIn;
-
-        if (Steam.loginRedirected())
-            await handleSteamLogin();
-
-        // updates .gog-pending/.gog
-        if (loggedIn) {
-            await GOG.handleLogin();
-            await GOG.getToken();
-        }
-    }
-
-    static async login(loud?: boolean) {
-        let token;
-        try {
-            token = await SYNC.login(loud);
-        } catch (e) {
-            console.error(e);
-        }
-        if (token)
-            await Home.showStorage();
-        else if (!SYNC.account || loud)
-            Home.showLogin();
-
-        return !!token;
-    }
-
-    static async showStorage() {
-        const response = await SYNC.makeRequest('');
-        if (!response.ok) {
-            console.error(response);
-            Home.showLogin();
-            return;
-        }
-        const items = await response.json();
-        const progress = <HTMLProgressElement>document.getElementById('space')!;
-        progress.max = items.quota.total;
-        progress.value = items.quota.used;
-        const GB = 1024 * 1024 * 1024;
-        progress.innerText = progress.title = `${Math.round(items.quota.used / GB)} GB / ${Math.round(items.quota.total / GB)} GB`;
-        document.body.classList.add('sync');
-        document.body.classList.remove('sync-pending');
-    }
-
-    static showLogin() {
-        document.body.classList.remove('sync-pending');
     }
 
     static runClient(nodes: IBorgNode[], persistenceID: string | null | undefined,
@@ -168,15 +73,12 @@ export class Home {
                 const offer = nodes[i];
                 let stall = 0;
                 let stall_reset = 0;
-                let auth: GOG.GogAuth | null = null;
                 //set up client object with an event callback: gets connect, status, chat, and shutter events
                 const client = new Client(clientApi, signalFactory, videoContainer, (event) => {
                     console.log('EVENT', i, event);
 
                     switch (event.type) {
                         case 'exit':
-                            if (auth !== null)
-                                auth.destroy();
                             const exitCode = (event as IExitEvent).code;
                             document.removeEventListener('keydown', hotkeys, true);
                             if (exitCode !== Client.StopCodes.CONCURRENT_SESSION)
@@ -240,31 +142,21 @@ export class Home {
                             if (client.exited())
                                 break;
                             const launch = {
-                                Launch: "borg:games/" + config.game,
-                                PersistenceRoot: SYNC.isLoggedIn() ? persistenceID : undefined,
-                                SteamLicenses: SYNC.isLoggedIn() ? await Steam.getSignedLicenses() : undefined,
-                                GogToken: SYNC.isLoggedIn() ? await GOG.getToken() : undefined,
-                                Cml: SYNC.isLoggedIn() ? await Minecraft.getCreds() : undefined,
+                                Launch: "borg:demo/" + config.demo,
+                                PersistenceRoot: undefined,
+                                SteamLicenses: undefined,
+                                GogToken: undefined,
+                                Cml: undefined,
                             };
                             channel.send("\x15" + JSON.stringify(launch));
                             await Session.waitForCommandRequest(channel);
                             controlChannel = channel;
                             break;
                         case 'persistence':
-                            if (SYNC.isLoggedIn() && persistenceID) {
-                                const persistence = new OneDrivePersistence(channel, [persistenceID]);
-                                console.log('persistence enabled');
-                            } else {
-                                console.warn('persistence not available');
-                            }
+                            console.warn('persistence not available');
                             break;
                         case 'auth':
-                            if (SYNC.isLoggedIn()) {
-                                auth = new GOG.GogAuth(channel, config.game);
-                                console.log('auth enabled');
-                            } else {
-                                console.warn('auth not available');
-                            }
+                            console.warn('auth not available');
                             break;
                     }
                 });
@@ -320,40 +212,11 @@ export class Home {
             if (!config.sessionId)
                 config.sessionId = crypto.randomUUID();
 
-            if ((config.game === 'factorio' || config.game === 'minecraft') && !SYNC.isLoggedIn()) {
-                if (!await showLoginDialog())
-                    return;
-            }
-
-            const uri = new URL('borg:games/' + config.game);
-
-            const gameName = config.game === 'minecraft' || config.game.startsWith("minecraft?")
-                ? 'Minecraft' : 'Factorio';
+            const uri = new URL('borg:demo/' + config.demo);
 
             document.body.classList.add('video');
 
             let persistenceID: string | undefined = undefined;
-            if (SYNC.isLoggedIn())
-                persistenceID = await ensureSyncFolders(uri);
-
-            switch (config.game) {
-                case 'factorio':
-                    break;
-                case 'minecraft':
-                    if (await Minecraft.loginRequired()) {
-                        const login = await Minecraft.beginLogin();
-                        showMinecraftLogin(login);
-                        try {
-                            await Minecraft.completeLogin(login.code, mcLoginAbort?.signal);
-                        } catch (e) {
-                            if (mcLoginAbort !== null && e instanceof DOMException && e.name === 'AbortError')
-                                return;
-                        } finally {
-                            mcLoginDialog.style.display = 'none';
-                        }
-                    }
-                    break;
-            }
 
             if (uri.searchParams.get('trial') === '1')
                 notify('Trial mode: 5 minutes', 30000);
@@ -390,122 +253,6 @@ export class Home {
     }
 }
 
-async function handleSteamLogin() {
-    if (!SYNC.isLoggedIn())
-        if (!await showLoginDialog())
-            return;
-    const licenses = await Steam.onLogin();
-    if (licenses === null) {
-        alert("Steam login failed.");
-        return;
-    }
-    const factorioLicense = licenses.find(l => l.AppID === Factorio.APP_ID || Factorio.REPRESENTATIVE_PACKAGE_IDS.includes(l.PackageID!));
-    Factorio.expand();
-    if (!factorioLicense)
-        alert("Factorio license not found.");
-}
-
-export async function showLoginDialog(disableCancel?: boolean) {
-    const dialog = document.getElementById('login-dialog')!;
-    const cancel = document.getElementById('cancelLogin')!;
-    cancel.style.display = !!disableCancel ? 'none' : 'inline-block';
-    dialog.style.display = 'flex';
-    const promise = new Promise<boolean>(async (resolve) => {
-        const doLogin = async () => {
-            try {
-                resolve(await Home.login(true));
-            } catch (e) {
-                resolve(false);
-            }
-        };
-        // if (SYNC.account)
-        //     await doLogin();
-        document.getElementById('onedriveLogin')!.onclick = doLogin;
-        cancel.onclick = () => resolve(false);
-    });
-    try {
-        return await promise;
-    } finally {
-        dialog.style.display = 'none';
-    }
-}
-
-function showMinecraftLogin(login: Minecraft.IMinecraftLoginInit) {
-    document.getElementById('mc-code')!.innerText = login.code;
-    const loginLink = <HTMLAnchorElement>document.getElementById('mc-login-link');
-    loginLink.href = login.location;
-    mcLoginDialog.style.display = 'flex';
-}
-
-export async function abortMinecraftLogin() {
-    if (mcLoginAbort !== null) {
-        mcLoginAbort.abort();
-        mcLoginAbort = new AbortController();
-    }
-
-    await util.wait(1000);
-}
-
-async function ensureSyncFolders(game: URL): Promise<string> {
-    let gamePathParts = game.pathname.split('/').slice(1);
-    if (gamePathParts.length === 0)
-        throw new Error('Invalid game path');
-
-    let gameDir = gamePathParts[0];
-    let platform = null;
-
-    if (gamePathParts.length === 1) {
-        if (gameDir == 'minecraft') {
-            gameDir = 'Minecraft';
-            // workaround for https://github.com/BorgGames/Drone/issues/20
-            await SYNC.makeRequest('special/approot:/Games/Minecraft/saves', {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({folder: {}})
-            });
-            await SYNC.makeRequest('special/approot:/Games/Minecraft/saves/.keep:/content', {
-                method: 'PUT',
-                headers: {'Content-Type': 'text/plain'},
-                body: 'https://github.com/BorgGames/Drone/issues/21'
-            });
-        }
-        else if (gameDir == 'factorio')
-            gameDir = 'Factorio';
-    } else {
-        switch (gameDir) {
-            case 'gog': case 'GOG':
-                gameDir = 'GOG/' + gamePathParts[1];
-                platform = 'GOG';
-                break;
-            default:
-                throw new Error('Invalid game path');
-        }
-    }
-
-    let url = 'special/approot:/Games/' + gameDir;
-    let response = await SYNC.makeRequest(url, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({folder: {}})
-    });
-
-    if (response.status === 409)
-        response = await SYNC.makeRequest(url);
-
-    if (!response.ok)
-        throw new Error(`Failed to create Sync folder: HTTP ${response.status}: ${response.statusText}`);
-    
-    await SYNC.makeRequest(url + '/.keep:/content', {
-        method: 'PUT',
-        headers: {'Content-Type': 'text/plain'},
-        body: 'https://github.com/BorgGames/Drone/issues/21'
-    });
-
-    const item = await response.json();
-
-    return item.id;
-}
-
 function safariHack() {
     if (!controlChannel) return;
 
@@ -513,7 +260,7 @@ function safariHack() {
 }
 
 interface ILaunchConfig {
-    game: string;
+    demo: string;
     nodeFilter?: INodeFilter,
     sessionId?: string;
 }
