@@ -91,7 +91,7 @@ export class Home {
                             stall = setTimeout(() => {
                                 if (!client.exited())
                                     client.destroy(Client.StopCodes.CONNECTION_TIMEOUT);
-                            }, 30000);
+                            }, 180000);
                             stall_reset = setTimeout(() => {
                                 if (!client.exited() && controlChannel !== null) {
                                     stall_reset = 0;
