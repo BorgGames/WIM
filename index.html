@@ -19,6 +19,16 @@
     <title>Borg Demo</title>
     <meta name="description" content="Demo">
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        input {
+            min-width: 28em;
+        }
+        
+        button {
+            margin: 0.5em;
+            min-width: 8em;
+        }
+    </style>
 </head>
 
 <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16572194743"></script>
@@ -65,11 +75,20 @@
     
     <p>
     <button class="action" type="button" id="run">Run</button>
+        <button class="action" type="button" onclick="shareConfig()">share</button>
+    </p>
+    
+    <p>
+        <a href="" id="this-config" style="display: none;"></a>
     </p>
 
     <p>
     <a href="mailto:support@borg.games">🐞 Report an issue 🐞</a>
     </p>
+</div>
+
+<div class="footer">
+    <h3 class="about"><a href="/about">© Borg Queen, LLC 2024</a></h3>
 </div>
 </body>
 
@@ -81,12 +100,22 @@
     import {devMode} from "./js/dev.js";
     import {Ephemeral} from "./js/ephemeral.js";
     import {Home} from "./js/home.js";
+    
+    const uriIn = document.getElementById('wim-uri');
+    const runIn = document.getElementById('wim-run');
+    const argsIn = document.getElementById('wim-args');
+    
+    // read initial values from query string
+    const urlParams = new URLSearchParams(window.location.search);
+    uriIn.value = urlParams.get('url');
+    runIn.value = urlParams.get('run');
+    argsIn.value = urlParams.get('args');
 
     const run = document.getElementById('run');
     run.onclick = function () {
-        const wimUri = document.getElementById('wim-uri').value;
-        const wimRun = document.getElementById('wim-run').value;
-        const wimArgs = document.getElementById('wim-args').value;
+        const wimUri = uriIn.value;
+        const wimRun = runIn.value;
+        const wimArgs = argsIn.value;
         Home.launch({
             demo: 'wim?url=' + encodeURIComponent(wimUri) + '&run=' + encodeURIComponent(wimRun)
                 + '&args=' + encodeURIComponent(wimArgs),
@@ -106,6 +135,41 @@
             run.title = '';
         if (nodes.length > 0)
             document.body.classList.remove('no-nodes');
+    }
+    
+    async function shareUrlClipboard(url) {
+        try {
+            await navigator.clipboard.writeText(url);
+            alert('Config URL copied to clipboard');
+        } catch (e) {
+            console.error('clipboard write failed', e);
+        }
+        
+        const thisConfig = document.getElementById('this-config');
+        thisConfig.href = url;
+        thisConfig.innerText = 'Link to this config';
+    }
+    
+    window.shareConfig = () => {
+        const uri = encodeURIComponent(uriIn.value);
+        const run = encodeURIComponent(runIn.value);
+        const args = encodeURIComponent(argsIn.value);
+        const url = window.location.origin + window.location.pathname + '?url=' + uri + '&run=' + run + '&args=' + args;
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'Borg Demo',
+                text: 'Run GPU-accelerated app in your browser',
+                url: url
+            }).then(() => {
+                console.log('Config URL shared');
+            }).catch(_ => {
+                shareUrlClipboard(url);
+            });
+            return;
+        }
+
+        shareUrlClipboard(url);
     }
     
     main();
