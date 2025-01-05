@@ -47,7 +47,7 @@ export class Home {
                 controlChannel.send(Msg.config({encoder_bitrate: value}));
         }
 
-        videoBitrate.value = String(parseInt(localStorage.getItem('encoder_bitrate')!) || 2);
+        videoBitrate.value = String(parseInt(localStorage.getItem('encoder_bitrate')!) || 20);
         changeBitrate();
     }
 
@@ -187,7 +187,7 @@ export class Home {
                         const info = JSON.parse(offer.peer_connection_offer);
                         const sdp = JSON.parse(info.Offer);
 
-                        const encoder_bitrate = parseInt(localStorage.getItem('encoder_bitrate')!) || 2;
+                        const encoder_bitrate = parseInt(localStorage.getItem('encoder_bitrate')!) || 20;
 
                         await Promise.race([
                             timeout,
