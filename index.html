@@ -41,7 +41,7 @@
     gtag('config', 'AW-16572194743');
 </script>
 
-<body class="no-nodes">
+<body class="no-nodes release">
 <h1 class="no-video"><span class="dev">DEV MODE -</span> Run in your browser <span id="network"></span>
     <noscript><h1>Cloud gaming requires JavaScript</h1></noscript>
 </h1>
@@ -49,7 +49,7 @@
 <h4>For best experience use Google Chrome or Chromium-based browser</h4>
 
 <div class="video-container">
-    <video autoplay disablePictureInPicture id="stream"></video>
+    <video autoplay playsInline disablePictureInPicture id="stream"></video>
     <h1 id="game-status"></h1>
     <button class="action" type="button" id="video-resume" style="display: none">Resume</button>
     <div id="video-overlay">
@@ -68,15 +68,17 @@
 </div>
 
 <div class="content no-video">
+    <div id="launch-config">
     <h3>WIM uri</h3>
     <input type="url" id="wim-uri" placeholder="http://your.srv/dir/game.wim">
     <h3>Run</h3>
     <input type="text" id="wim-run" placeholder="bin/game-x64.exe">
     <h3>Args</h3>
     <input type="text" id="wim-args" placeholder="-d3d11 -windowed -res=1280x720">
+    </div>
     
     <p>
-    <button class="action" type="button" id="run">Run</button>
+        <button class="action" type="button" id="run">Run</button>
         <button class="action" type="button" onclick="shareConfig()">share</button>
     </p>
     
@@ -91,7 +93,7 @@
 
 <div class="footer">
     <h4>For best experience use Google Chrome or Chromium-based browser</h4>
-    <h3 class="about"><a href="/about">© Borg Queen, LLC 2024</a></h3>
+    <h3 class="about"><a href="/about">© Borg Queen, LLC 2025</a></h3>
 </div>
 </body>
 
@@ -113,6 +115,7 @@
     uriIn.value = urlParams.get('url');
     runIn.value = urlParams.get('run');
     argsIn.value = urlParams.get('args');
+    const NETWORK = new URLSearchParams(window.location.search).get('interlink');
 
     const run = document.getElementById('run');
     run.onclick = function () {
@@ -136,10 +139,16 @@
         run.disabled = nodes.length === 0;
         if (!run.disabled)
             run.title = '';
-        if (nodes.length > 0)
+        if (nodes.length > 0) {
             document.body.classList.remove('no-nodes');
+            if (NETWORK && NETWORK.startsWith('CES-')) {
+                document.getElementById('launch-config').remove();
+                document.getElementById('stream').muted = true;
+                run.click();
+            }
+        }
     }
-    
+
     async function shareUrlClipboard(url) {
         try {
             await navigator.clipboard.writeText(url);
@@ -157,7 +166,9 @@
         const uri = encodeURIComponent(uriIn.value);
         const run = encodeURIComponent(runIn.value);
         const args = encodeURIComponent(argsIn.value);
-        const url = window.location.origin + window.location.pathname + '?url=' + uri + '&run=' + run + '&args=' + args;
+        let url = window.location.origin + window.location.pathname + '?url=' + uri + '&run=' + run + '&args=' + args;
+        if (NETWORK)
+            url += '&interlink=' + NETWORK;
 
         if (navigator.share) {
             navigator.share({
